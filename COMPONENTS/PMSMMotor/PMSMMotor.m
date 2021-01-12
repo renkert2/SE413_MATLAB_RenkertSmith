@@ -3,52 +3,78 @@ classdef PMSMMotor < Component
     %   Detailed explanation goes here
     
     properties
-        L % Leakage Inductance
-        J % Mechanical rotational inertia
-        P % Total number of poles
-        lambda_m % Magnetic Flux Linkage
-        R_1 % Phase Resistance
-        B_v % Viscous Friction
-        T_c % Coulomb Friction
-        sig = 1 % Sigmoid function of speed sig(w), LUT at some point
+        L double {mustBeNonnegative} = 1 % Leakage Inductance
+        J double {mustBeNonnegative} = 1% Mechanical rotational inertia
+        P double {mustBeInteger, mustBeNonnegative} = 12 % Total number of poles
+        lambda_m double {mustBeNonnegative} = 1% Magnetic Flux Linkage
+        R_1 double {mustBeNonnegative} = 1 % Phase Resistance
+        B_v double {mustBeNonnegative} = 1 % Viscous Friction
+        T_c double {mustBeNonnegative} = 1 % Coulomb Friction
+        sigmoid_a_param double = 10 % Parameter used to approximate sign function with sigmoid function sig(w) = 2/(1+Exp(-a*w))-1
     end
     
     methods (Access = protected)
-        function g=DefineGraph(p)
-            %             g = GraphModel(6,6,4,0);
-            %
-            %             g.x_desc=["i_q" "\omega_m"];
-            %             g.t_desc = ["v_q", "T_l", "T_1", "T_2"];
-            %             g.x_init = [0 0];
-            %             g.E = [3 1;1 2;2 4;1 5;2 6;2 6];
-            %
-            %             g.V_type = [2 2 2 2 1 1];
-            %             g.V_val = [p.L, p.J]; % Each V_val coefficient is multiplied by corresponding V_val_map
-            %
-            %             g.P_f = @(x_t, x_h, u_j)... % Power flow vector
-            %                 [x_t*x_h;
-            %                 x_t*x_h*p.P/2*sqrt(3/2)*p.lambda_m;
-            %                 x_t*x_h;
-            %                 x_t^2*p.R_1;
-            %                 p.B_v*x_t^2;
-            %                 p.T_c*x_t;
-            %                 ];
-            %
-            %             g.set_g(@(x_t, x_h, u) p.sig(x_t),6); % Add sigmoid function to the last power flow coefficient
-                        
+        function g=DefineGraph(obj)
             % Capacitance Types
+            C(1) = Type_Capacitance('x');
             
             % PowerFlow Types
+            P(1) = Type_PowerFlow('xt*xh');
+            P(2) = Type_PowerFlow('xt^2');
+            
+            syms xt
+            sig = 2/(1+exp(-obj.sigmoid_a_param.*xt))-1;
+            P(3) = Type_PowerFlow(sig*xt);
             
             % Vertices
+            V(1) = GraphVertex_Internal('Description', "Inductance (i_q)", 'Capacitance', C(1), 'Coefficient', obj.L, 'Initial', 0);
+            V(2) = GraphVertex_Internal('Description', "Inertia (omega_m)", 'Capacitance', C(1), 'Coefficient', obj.J, 'Initial', 0);
+            
+            V(3) = GraphVertex_External('Description', "Input Voltage (v_q)",'Initial',0);
+            V(4) = GraphVertex_External('Description', "Mechanical Load (T_l)",'Initial',0);
+            V(5) = GraphVertex_External('Description', "Heat Sink",'Initial',0);
             
             % Inputs
             
             % Edges
+            E(1) = GraphEdge_Internal(...
+                'PowerFlow',P(1),...
+                'Coefficient',1,...
+                'TailVertex',V(3),...
+                'HeadVertex',V(1));
             
-            % Ports
+            E(2) = GraphEdge_Internal(...
+                'PowerFlow',P(1),...
+                'Coefficient',obj.P/2*sqrt(3/2)*obj.lambda_m,...
+                'TailVertex',V(1),...
+                'HeadVertex',V(2));
             
-            g = Graph(Vertex, Edge);
+            E(3) = GraphEdge_Internal(...
+                'PowerFlow',P(1),...
+                'Coefficient',1,...
+                'TailVertex',V(2),...
+                'HeadVertex',V(4));
+            
+            E(4) = GraphEdge_Internal(...
+                'PowerFlow',P(2),...
+                'Coefficient',obj.R_1,...
+                'TailVertex',V(1),...
+                'HeadVertex',V(5));
+            
+            E(5) = GraphEdge_Internal(...
+                'PowerFlow',[P(2) P(3)],...
+                'Coefficient',[obj.B_v obj.T_c],...
+                'TailVertex',V(2),...
+                'HeadVertex',V(5));
+                       
+            g = Graph(V, E);
+            obj.graph = g;
+            
+            % Ports            
+            p(1) = ComponentPort('Description',"Voltage Input",'Domain',"Electrical",'Element',E(1));
+            p(2) = ComponentPort('Description',"Torque Output",'Domain',"Mechanical",'Element',E(3));
+            p(3) = ComponentPort('Description',"Heat Sink",'Domain',"Thermal",'Element',V(5));
+            obj.Ports = p;
         end
     end
 end
