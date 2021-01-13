@@ -3,38 +3,45 @@ classdef ShaftCoupler < Component
     %   Detailed explanation goes here
     
     properties
-        k % Torsional spring constant
+        k double = 1 % Torsional spring constant
     end
     
     methods (Access = protected)
         function g = DefineGraph(obj)
-%             g = GraphModel(2,3,2,0);
-%             g.x_desc=["T"];
-%             g.x_init = [0];
-%             g.t_desc = ["\omega_1", "\omega_2"];
-%             g.E = [2 1;1 3];
-% 
-%             g.V_type = [2 2 2];
-%             g.V_val = [1/obj.k]; % Each V_val coefficient is multiplied by corresponding V_val_map
-% 
-%             g.P_f = @(x_t, x_h, u_j)..., % Power flow vector
-%             [x_t*x_h;
-%              x_t*x_h
-%              ];
-            
             % Capacitance Types
+            C(1) = Type_Capacitance('x');
             
             % PowerFlow Types
+            P(1) = Type_PowerFlow('xt*xh');
             
             % Vertices
+            V(1) = GraphVertex_Internal('Description', "Torque (T)", 'Capacitance', C(1), 'Coefficient', (1/obj.k), 'Initial', 0);
+            
+            V(2) = GraphVertex_External('Description', "Input Inertia (omega_1)", 'Initial', 0);
+            V(3) = GraphVertex_External('Description', "Output Inertia (omega_2)", 'Initial', 0);
             
             % Inputs
             
             % Edges
+            E(1) = GraphEdge_Internal(...
+                'PowerFlow',P(1),...
+                'Coefficient',1,...
+                'TailVertex',V(2),...
+                'HeadVertex',V(1));
+            
+            E(2) = GraphEdge_Internal(...
+                'PowerFlow',P(1),...
+                'Coefficient',1,...
+                'TailVertex',V(1),...
+                'HeadVertex',V(3));
+            
+            g = Graph(V,E);
+            obj.graph = g;
             
             % Ports
-            
-            g = Graph(Vertex, Edge);
+            p(1) = ComponentPort('Description',"Inertia Input",'Domain',"Mechanical",'Element',E(1));
+            p(2) = ComponentPort('Description',"Inertial Output",'Domain',"Mechanical",'Element',E(2));
+            obj.Ports = p;
         end
     end
 end

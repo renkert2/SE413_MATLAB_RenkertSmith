@@ -1,0 +1,8 @@
+cd C:\Users\prenk\Box\ARG_Research\QuadrotorOptimization\
+addpath(genpath('COMPONENTS'))
+
+motor = PMSMMotor();
+coupler = ShaftCoupler();
+prop = Propeller();
+
+comps = [motor, coupler, prop];
