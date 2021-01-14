@@ -37,10 +37,11 @@ classdef Propeller < Component
             V(1) = GraphVertex_Internal('Description', "Inertia (omega)",...
                 'Capacitance', C(1),...
                 'Coefficient', obj.J,...
-                'Initial', 0);
+                'Initial', 0,...
+                'VertexType', 'AngularVelocity');
             
-            V(2) = GraphVertex_External('Description', "Input Torque (T_m)", 'Initial',0);
-            V(3) = GraphVertex_External('Description', "Drag Sink",'Initial',0);
+            V(2) = GraphVertex_External('Description', "Input Torque (T_m)", 'Initial',0,'VertexType','Torque');
+            V(3) = GraphVertex_External('Description', "Drag Sink",'Initial',0,'VertexType','Abstract');
             
             % Inputs
             
@@ -61,7 +62,7 @@ classdef Propeller < Component
             obj.graph = g;
             
             % Ports
-            p(1) = ComponentPort('Description',"Torque Input",'Domain',"Mechanical",'Element',E(1));
+            p(1) = ComponentPort('Description',"Torque Input",'Element',E(1));
             obj.Ports = p;
         end
     end

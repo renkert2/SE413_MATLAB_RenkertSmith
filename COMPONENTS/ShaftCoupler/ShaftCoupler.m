@@ -15,10 +15,10 @@ classdef ShaftCoupler < Component
             P(1) = Type_PowerFlow('xt*xh');
             
             % Vertices
-            V(1) = GraphVertex_Internal('Description', "Torque (T)", 'Capacitance', C(1), 'Coefficient', (1/obj.k), 'Initial', 0);
+            V(1) = GraphVertex_Internal('Description', "Torque (T)", 'Capacitance', C(1), 'Coefficient', (1/obj.k), 'Initial', 0, 'VertexType', 'Torque');
             
-            V(2) = GraphVertex_External('Description', "Input Inertia (omega_1)", 'Initial', 0);
-            V(3) = GraphVertex_External('Description', "Output Inertia (omega_2)", 'Initial', 0);
+            V(2) = GraphVertex_External('Description', "Input Inertia (omega_1)", 'Initial', 0, 'VertexType', 'AngularVelocity');
+            V(3) = GraphVertex_External('Description', "Output Inertia (omega_2)", 'Initial', 0, 'VertexType', 'AngularVelocity');
             
             % Inputs
             
@@ -39,8 +39,8 @@ classdef ShaftCoupler < Component
             obj.graph = g;
             
             % Ports
-            p(1) = ComponentPort('Description',"Inertia Input",'Domain',"Mechanical",'Element',E(1));
-            p(2) = ComponentPort('Description',"Inertial Output",'Domain',"Mechanical",'Element',E(2));
+            p(1) = ComponentPort('Description',"Inertia Input",'Element',E(1));
+            p(2) = ComponentPort('Description',"Inertial Output",'Element',E(2));
             obj.Ports = p;
         end
     end
