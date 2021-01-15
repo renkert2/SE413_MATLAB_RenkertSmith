@@ -1,17 +1,25 @@
 classdef PMSMMotor < Component
-    %UNTITLED Summary of this class goes here
-    %   Detailed explanation goes here
+    %PMSM Motor
+    %   Default parameters from Ferry 2017 - 'Quadcopter Plant Model and Control System Development With MATLAB/Simulink Implementation'
     
     properties
-        L double {mustBeNonnegative} = 1 % Leakage Inductance
-        J double {mustBeNonnegative} = 1% Mechanical rotational inertia
-        P double {mustBeInteger, mustBeNonnegative} = 12 % Total number of poles
-        lambda_m double {mustBeNonnegative} = 1% Magnetic Flux Linkage
-        R_1 double {mustBeNonnegative} = 1 % Phase Resistance
-        B_v double {mustBeNonnegative} = 1 % Viscous Friction
-        T_c double {mustBeNonnegative} = 1 % Coulomb Friction
+        L double {mustBeNonnegative} = 1.17e-4 % Leakage Inductance - H
+        J double {mustBeNonnegative} = 6.5e-7 % Mechanical rotational inertia
+        K_t double {mustBeNonnegative} = 0.00255 % Torque/Speed Coefficient - Nm/A
+        R_1 double {mustBeNonnegative} = 0.117 % Phase Resistance - Ohms
+        B_v double {mustBeNonnegative} = 2.415e-6 % Viscous Friction - N*m*s
+        T_c double {mustBeNonnegative} = 0 % Coulomb Friction
         sigmoid_a_param double = 10 % Parameter used to approximate sign function with sigmoid function sig(w) = 2/(1+Exp(-a*w))-1
     end
+    
+    methods (Static)
+        function K_t = calcTorqueConstant(P,lambda_m)
+            % P - Total number of poles - not pole pairs
+            % lambda_m - Magnetic Flux Linkage
+            K_t = (P/2)*lambda_m;
+        end
+    end
+    
     
     methods (Access = protected)
         function g=DefineGraph(obj)
@@ -45,7 +53,7 @@ classdef PMSMMotor < Component
             
             E(2) = GraphEdge_Internal(...
                 'PowerFlow',PF(1),...
-                'Coefficient',obj.P/2*sqrt(3/2)*obj.lambda_m,...
+                'Coefficient',sqrt(3/2)*obj.K_t,...
                 'TailVertex',V(1),...
                 'HeadVertex',V(2));
             
