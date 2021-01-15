@@ -3,11 +3,11 @@ classdef DCDCConverter < Component
     %   Detailed explanation goes here
     
     properties
-        L_1 double = 1;
-        C_1 double = 1;
-        L_3 double = 1;
-        C_2 double = 1;
-        R_1 double = 1;
+        L_1 double = 1e-6;
+        C_1 double = 1e-6;
+        L_3 double = 1e-6;
+        C_2 double = 1e-6;
+        R_1 double = 1e-6;
     end
     
     methods (Access = protected)

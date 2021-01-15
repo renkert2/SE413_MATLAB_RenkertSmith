@@ -3,11 +3,11 @@ classdef Propeller < Component
     %   Detailed explanation goes here
     
     properties
-        J double = 1 % Rotational Inertia
-        k_Q double = 1 % Drag torque coefficient
-        k_T double = 1 % Thrust coefficient
-        rho double = 1 % Air Density
-        D double = 1 % Propeller Diameter
+        J double = 5.7258e-04 % Rotational Inertia - kg*m^2
+        k_Q double = 2.4968e-05 % Drag torque coefficient
+        k_T double = 3.6494e-05 % Thrust coefficient
+        rho double = 1.205 % Air Density - kg/m^3
+        D double = 0.1270 % Propeller Diameter - m
     end
     
     properties (Dependent)

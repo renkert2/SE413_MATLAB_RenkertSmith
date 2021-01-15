@@ -1,14 +1,14 @@
 classdef Battery < Component
     
     properties
-        Q double = 1  %Battery Capacity
-        C_1 double = 1
-        R_1 double = 1
-        C_2 double = 1
-        R_2 double = 1
-        L_1 double = 1
-        R_s double = 1 %Series Reistance
-        V_OCV double = 1 %Open Circuit Voltage, V_OCV(q).  Will become a LUT at some point
+        Q double = 2520  %Battery Capacity - Coulombs
+        C_1 double = 1e-6
+        R_1 double = 1e-6
+        C_2 double = 1e-6
+        R_2 double = 1e-6
+        L_1 double = 1e-6
+        R_s double = 1e-6 %Series Reistance
+        V_OCV double = 11.1 %Nominal Open Circuit Voltage, V_OCV(q)
     end
     
     methods (Access = protected)
@@ -23,12 +23,12 @@ classdef Battery < Component
             P(3) = Type_PowerFlow("xt^2");
             
             % Vertices
-            Vertex(1) = GraphVertex_Internal('Description', "Battery SOC", 'Capacitance', C(1), 'Coefficient', obj.Q*obj.V_OCV, 'Initial', 1);
-            Vertex(2) = GraphVertex_Internal('Description', "Capacitance 1", 'Capacitance', C(2), 'Coefficient', obj.C_1, 'Initial', 0);
-            Vertex(3) = GraphVertex_Internal('Description', "Capacitance 2", 'Capacitance', C(2), 'Coefficient', obj.C_2, 'Initial', 0);
-            Vertex(4) = GraphVertex_Internal('Description', "Inductance 1", 'Capacitance', C(2), 'Coefficient', obj.L_1, 'Initial', 0);
-            Vertex(5) = GraphVertex_External('Description', "Load Voltage", 'Initial', 0);
-            Vertex(6) = GraphVertex_External('Description', "Heat Sink", 'Initial', 0);
+            Vertex(1) = GraphVertex_Internal('Description', "Battery SOC", 'Capacitance', C(1), 'Coefficient', obj.Q*obj.V_OCV, 'Initial', 1, 'VertexType','Abstract');
+            Vertex(2) = GraphVertex_Internal('Description', "Capacitance 1", 'Capacitance', C(2), 'Coefficient', obj.C_1, 'Initial', 0, 'VertexType', 'Voltage');
+            Vertex(3) = GraphVertex_Internal('Description', "Capacitance 2", 'Capacitance', C(2), 'Coefficient', obj.C_2, 'Initial', 0, 'VertexType', 'Voltage');
+            Vertex(4) = GraphVertex_Internal('Description', "Inductance 1", 'Capacitance', C(2), 'Coefficient', obj.L_1, 'Initial', 0, 'VertexType', 'Current');
+            Vertex(5) = GraphVertex_External('Description', "Load Voltage", 'Initial', 0, 'VertexType', 'Voltage');
+            Vertex(6) = GraphVertex_External('Description', "Heat Sink", 'Initial', 0, 'VertexType', 'Temperature');
             
             % Inputs
             
@@ -45,7 +45,7 @@ classdef Battery < Component
             obj.graph = g;
 
             % Ports
-            p(1) = ComponentPort('Description','Load Voltage','Domain','Electrical','Element', Edge(6));
+            p(1) = ComponentPort('Description','Load Voltage','Element', Edge(6));
             obj.Ports = p;
         end
     end
