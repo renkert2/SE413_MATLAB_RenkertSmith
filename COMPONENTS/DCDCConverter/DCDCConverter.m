@@ -21,22 +21,23 @@ classdef DCDCConverter < Component
             P(3) = Type_PowerFlow("xt^2");
             
             % Vertices
-            V(7) = GraphVertex();
+
             % Internal Vertices
             desc = ["Inductance 1", "Capacitance 1", "Virtual Inductance", "Capacitance 2"];
-            type = 1;
+            type = [VertexTypes.Current, VertexTypes.Voltage, VertexTypes.Current, VertexTypes.Voltage];
             cap = C(1);
             coeff = [obj.L_1, obj.C_1, obj.L_3, obj.C_2];
             init = 0;
             for i = 1:4
-                V(i) = GraphVertex_Internal('Description',desc(i),'Type',type,'Capacitance',cap,'Coefficient',coeff(i),'Initial',init);
+                V(i) = GraphVertex_Internal('Description',desc(i),'Capacitance',cap,'Coefficient',coeff(i),'Initial',init, 'VertexType', type(i));
             end
             
             % External Vertices
             desc = ["Output Current", "Input Voltage", "Heat Sink"];
+            type = [VertexTypes.Current, VertexTypes.Voltage, VertexTypes.Temperature];
             init = [0 0 0];
             for i = 1:3
-                V(i+4) = GraphVertex_External('Description',desc(i),'Initial', init(i));
+                V(i+4) = GraphVertex_External('Description',desc(i),'Initial', init(i), 'VertexType', type(i));
             end
             
             % Inputs
@@ -57,9 +58,9 @@ classdef DCDCConverter < Component
             g = Graph(V, E);
             obj.graph = g;
             
-            p(1) = ComponentPort('Description',"Voltage Input",'Domain',"Electrical",'Element',obj.graph.Edges(1));
-            p(2) = ComponentPort('Description',"Current Output",'Domain',"Electrical",'Element',obj.graph.Edges(5));
-            p(3) = ComponentPort('Description',"Heat Sink",'Domain',"Thermal",'Element',obj.graph.Vertices(7));
+            p(1) = ComponentPort('Description',"Voltage Input",'Element',obj.graph.Edges(1));
+            p(2) = ComponentPort('Description',"Current Output",'Element',obj.graph.Edges(5));
+            p(3) = ComponentPort('Description',"Heat Sink",'Element',obj.graph.Vertices(7));
             obj.Ports = p;
         end
     end
