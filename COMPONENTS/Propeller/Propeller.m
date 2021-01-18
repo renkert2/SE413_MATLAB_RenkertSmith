@@ -25,7 +25,12 @@ classdef Propeller < Component
     end
     
     methods (Access = protected)
-        function g=DefineGraph(obj)           
+        function init();
+            
+        end
+        
+        function g=DefineGraph(obj)
+            init();
             % Capacitance Types
             C(1) = Type_Capacitance('x');
             
