@@ -11,7 +11,7 @@ classdef DCBus_VoltageInput < Component
     end
     
     methods (Access = protected)
-        function g=DefineGraph(obj)
+        function DefineComponent(obj)
             % Capacitance Types
             C(1) = Type_Capacitance('x');
             

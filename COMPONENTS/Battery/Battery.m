@@ -18,7 +18,7 @@ classdef Battery < Component
     end
     
     methods (Access = protected)
-        function g = DefineGraph(obj)
+        function DefineComponent(obj)
             % Capacitance Types
             C(1) = Type_Capacitance("1"); % Capacitance Type for Q*V_OCV
             C(2) = Type_Capacitance("x");

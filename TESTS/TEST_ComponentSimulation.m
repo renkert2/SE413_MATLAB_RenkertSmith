@@ -2,10 +2,7 @@
 prop = Propeller();
 prop_model = GraphModel(prop.graph);
 
-%% Shaft Coupler
-sc = ShaftCoupler();
-sc_model = GraphModel(sc.graph);
-
+%% 
 inputs = @(t) [];
 
 disturbances = @(t) [1;1];

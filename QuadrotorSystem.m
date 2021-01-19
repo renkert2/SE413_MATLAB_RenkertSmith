@@ -28,4 +28,7 @@ for i = 1:4
 end
    
 g_sys = Combine(components, ConnectP);
-sys_model = GraphModel(g_sys)
+%sys_model = GraphModel(g_sys)
+
+%% Plot Graph
+g_sys.plot()
