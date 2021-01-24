@@ -6,7 +6,7 @@ classdef DCBus_CurrentEquivalence < Component
         N_outputs double {mustBeInteger} = 1
         
         L double = 0
-        R double = 0
+        R double = 0.01
         C double = 0
     end
     
