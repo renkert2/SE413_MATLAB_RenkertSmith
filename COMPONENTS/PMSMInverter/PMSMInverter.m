@@ -5,12 +5,12 @@ classdef PMSMInverter < Component
     properties
         rated_current double = 20; %Rated Current - Amps
         nominal_voltage double = 14.8; %Nominal (average) voltage - Volts
-        eta = 0.98; % Efficiency
+        eta = 0.85; % Efficiency
         
-        L_1 double = 1e-5;
+        L_1 double = 1e-4;
         C_1 double = 0;
         L_2 double = 0;
-        C_2 double = 1e-5;
+        C_2 double = 1e-4;
         R_1 double = 1e-2;
     end
     
@@ -62,18 +62,16 @@ classdef PMSMInverter < Component
             
             % Inputs
             I(1) = GraphInput("d_1");
-            I(2) = GraphInput("d_2");
             
             % Edges
             E(6) = GraphEdge();
-            pflows = P([1,1,2,2,1,3]);
+            pflows = P([1,1,2,1,1,3]);
             coeffs = [1 1 sqrt(3/2) 1 1 obj.R_1];
             Emat = V([6 1;1 2;2 3;3 4;4 5;1 7]);
             for i = 1:6
                 E(i) = GraphEdge_Internal('PowerFlow',pflows(i),'Coefficient',coeffs(i),'TailVertex',Emat(i,1),'HeadVertex',Emat(i,2));
             end
             E(3).Input = I(1);
-            E(4).Input = I(2);
             
             g = Graph(V, E);
             obj.graph = g;

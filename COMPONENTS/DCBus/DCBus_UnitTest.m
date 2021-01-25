@@ -11,5 +11,9 @@ bus_model_alg.DisturbanceNames
 disturbances = [10; 10; 10; 10;0];
 
 close all
+
+subplot(1,2,1)
 bus_model_alg.Simulate([], disturbances, [0 0.1]);
+subplot(1,2,2)
 bus_model_dyn.Simulate([], disturbances, [0 0.1]);
+plt2 = gcf;

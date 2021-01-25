@@ -5,8 +5,8 @@ inv_model.StateNames
 inv_model.InputNames
 inv_model.DisturbanceNames
 
-inputs = [2;1]; % Increase output voltage by factor of 2
-disturbances = [1;11.1;0];
+inputs = [2]; % Increase output voltage by factor of 2
+disturbances = [10;11.1;0];
 
 
 %%
