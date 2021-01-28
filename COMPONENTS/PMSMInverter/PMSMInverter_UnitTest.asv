@@ -2,7 +2,7 @@ inv = PMSMInverter('Name', "PMSM Inverter");
 
 %%
 inv.graph.Edges(4).Input = inv.graph.Inputs(1);
-inv.graph.Edges(4).PowerFlow(2) = Type_PowerFlow("u1*xt");
+inv.graph.Edges(4).PowerFlow(2)
 %%
 
 inv_model = GraphModel(inv.graph);

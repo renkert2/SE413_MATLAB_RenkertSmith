@@ -4,7 +4,7 @@ classdef PMSMMotor < Component
     
     properties
         L double {mustBeNonnegative} = 1.17e-4 % Leakage Inductance - H
-        J double {mustBeNonnegative} = 6.5e-7 % Mechanical rotational inertia
+        J double {mustBeNonnegative} = 6.5e-6 % Mechanical rotational inertia - Modified to better reflect Ferry's simulation results
         K_t double {mustBeNonnegative} = 0.00255 % Torque/Speed Coefficient - Nm/A
         R_1 double {mustBeNonnegative} = 0.117 % Phase Resistance - Ohms
         B_v double {mustBeNonnegative} = 2.415e-6 % Viscous Friction - N*m*s

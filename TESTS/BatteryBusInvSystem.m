@@ -12,12 +12,13 @@ pmsminverter = PMSMInverter('Name', "Inverter");
 components = [battery, dcbus, pmsminverter];
 
 ConnectP = {[battery.Ports(1) dcbus.Ports(1)];
-    [dcbus.Ports(2), pmsminverter.Ports(1)]};
+    [pmsminverter.Ports(1), dcbus.Ports(2)]};
 
 g_sys = Combine(components, ConnectP);
 sys_model = GraphModel(g_sys)
 
 %% Plot Graph
+figure
 plot(sys_model)
 
 %% System Tables
@@ -43,9 +44,26 @@ sys_model.StateNames
 sys_model.InputNames
 sys_model.DisturbanceNames
 
-inputs = 2;
+inputs = 1;
 disturbances = zeros(4,1);
 disturbances(3) = 15;
- 
-% %[t,x] = Simulate(sys_model, inputs, disturbances, [0 10], 'StateSelect', [1,13]);
-Simulate(sys_model, inputs, disturbances, [0 1], 'StateSelect', [6 8 5]);
+
+figure
+Simulate(sys_model, inputs, disturbances, [0 1]);
+
+%% Input Test
+input_vector = 0:0.1:2;
+current_vector = 0:.1:10;
+disturbances = zeros(4,1);
+power = zeros(numel(input_vector),numel(current_vector));
+for i = 1:numel(input_vector)
+    for j = 1:numel(current_vector)
+        inputs = input_vector(i);
+        disturbances(3) = current_vector(j);
+        [t,x] = Simulate(sys_model, inputs, disturbances, [0 1], 'PlotStates', false);
+        power(i,j) = x(end,7).*current_vector(j);
+    end
+end
+
+figure
+surf(input_vector, current_vector, power')
