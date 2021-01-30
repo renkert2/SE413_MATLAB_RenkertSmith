@@ -8,7 +8,7 @@ battery = Battery('Name', "Battery");
 dcbus = DCBus_CurrentEquivalence('Name', 'Bus', 'N_inputs',1,'N_outputs',1, 'R', 0);
 
 
-pmsminverter = PMSMInverter('Name', "Inverter", 'L', 1e-5, 'C', 1e-5);
+pmsminverter = PMSMInverter('Name', "Inverter", 'InverterType', 'LinearLoss');
 pmsmmotor = PMSMMotor('Name', "Motor");
 shaftcoupler = ShaftCoupler('Name', "Shaft");
 propeller = Propeller('Name', "Propeller");

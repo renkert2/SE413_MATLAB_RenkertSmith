@@ -13,5 +13,5 @@ disturbances = [input_voltage; load_torque; 0]; % Apply load torque at 0.25 seco
 %%
 close all
 figure
+
 motor_model.Simulate([], disturbances, [0 10]);
-%motor_model.Simulate([], disturbances, [0 1], 'PlotStates', false, 'PlotDisturbances', true);

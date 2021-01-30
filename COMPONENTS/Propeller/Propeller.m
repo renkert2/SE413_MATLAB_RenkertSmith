@@ -3,9 +3,9 @@ classdef Propeller < Component
     %   Detailed explanation goes here
     
     properties
-        J double = 5.7258e-04 % Rotational Inertia - kg*m^2
-        k_Q double = 2.4968e-05 % Drag torque coefficient
-        k_T double = 3.6494e-05 % Thrust coefficient
+        J double = 4.4e-05 % Rotational Inertia - kg*m^2 from "Stabilization and Control of Unmanned Quadcopter (Jiinec)
+        k_Q double = 0.03/(2*pi) % Drag torque coefficient - N/(s*kg*m)=1/s^4, speed in rev/s.
+        k_T double = 0.05 % Thrust coefficient - N/(s^2*kg*m^2), speed in rev/s.
         rho double = 1.205 % Air Density - kg/m^3
         D double = 0.1270 % Propeller Diameter - m
     end
@@ -22,16 +22,27 @@ classdef Propeller < Component
         function stc = get.square_thrust_coeff(obj)
             stc = obj.k_T*obj.rho*obj.D^4;
         end
+        function k_Q = setTorqueCoeff(obj, lumped_torque_coeff)
+            k_Q = lumped_torque_coeff/(obj.rho*obj.D.^5);
+            obj.k_Q = k_Q;
+        end
+        function k_T = setThrustCoeff(obj, lumped_thrust_coeff)
+            k_T = lumped_thrust_coeff/(obj.rho*obj.D.^4);
+            obj.k_T = k_T;
+        end
     end
     
-    methods (Access = protected)       
+    methods (Access = protected)
+        function init(obj)
+
+        end
         function DefineComponent(obj)
             % Capacitance Types
             C(1) = Type_Capacitance('x');
             
             % PowerFlow Types
             P(1) = Type_PowerFlow('xt*xh');
-            P(2) = Type_PowerFlow('xt^3');
+            P(2) = Type_PowerFlow('(xt/(2*pi))^3');
             
             % Vertices
             V(1) = GraphVertex_Internal('Description', "Inertia (omega)",...

@@ -3,7 +3,7 @@ classdef PMSMInverter < Component
     %   Detailed explanation goes here
     
     properties
-        InverterType InverterTypes = InverterTypes.ConstantLoss
+        InverterType InverterTypes = InverterTypes.LinearLoss
         
         rated_current double = 20; %Rated Current - Amps
         nominal_voltage double = 14.8; %Nominal (average) voltage - Volts
@@ -11,7 +11,7 @@ classdef PMSMInverter < Component
         
         L double = 0;
         C double = 0;
-        R_1 double = 0.2;
+        R_1 double = 0.0;
         R_2 double = 1.5;
     end
     
