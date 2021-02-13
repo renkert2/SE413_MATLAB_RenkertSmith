@@ -3,13 +3,13 @@ classdef PMSMMotor < Component
     %   Default parameters from Ferry 2017 - 'Quadcopter Plant Model and Control System Development With MATLAB/Simulink Implementation'
     
     properties
-        L double {mustBeNonnegative} = 1.17e-4 % Leakage Inductance - H
-        J double {mustBeNonnegative} = 6.5e-6 % Mechanical rotational inertia - Modified to better reflect Ferry's simulation results
-        K_t double {mustBeNonnegative} = 0.00255 % Torque/Speed Coefficient - Nm/A
-        R_1 double {mustBeNonnegative} = 0.117 % Phase Resistance - Ohms
-        B_v double {mustBeNonnegative} = 2.415e-6 % Viscous Friction - N*m*s
-        T_c double {mustBeNonnegative} = 0 % Coulomb Friction
-        sigmoid_a_param double = 10 % Parameter used to approximate sign function with sigmoid function sig(w) = 2/(1+Exp(-a*w))-1
+        L {mustBeParam} = 1.17e-4 % Leakage Inductance - H
+        J {mustBeParam} = 6.5e-6 % Mechanical rotational inertia - Modified to better reflect Ferry's simulation results
+        K_t {mustBeParam} = 0.00255 % Torque/Speed Coefficient - Nm/A
+        R_1 {mustBeParam} = 0.117 % Phase Resistance - Ohms
+        B_v {mustBeParam} = 2.415e-6 % Viscous Friction - N*m*s
+        T_c {mustBeParam} = 0 % Coulomb Friction
+        sigmoid_a_param {mustBeParam} = 10 % Parameter used to approximate sign function with sigmoid function sig(w) = 2/(1+Exp(-a*w))-1
     end
     
     methods (Static)

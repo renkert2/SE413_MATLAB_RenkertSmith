@@ -3,7 +3,7 @@ classdef ShaftCoupler < Component
     %   Detailed explanation goes here
     
     properties
-        k double = 200e3 % Torsional spring constant - N*m/rad
+        k {mustBeParam} = 200e3 % Torsional spring constant - N*m/rad
     end
     
     methods (Access = protected)

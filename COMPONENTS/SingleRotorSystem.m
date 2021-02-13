@@ -5,10 +5,10 @@ addpath(genpath('COMPONENTS'));
 %% Instantiate Components
 
 battery = Battery('Name', "Battery");
-dcbus = DCBus_CurrentEquivalence('Name', 'Bus', 'N_inputs',1,'N_outputs',1, 'R', 0);
+dcbus = DCBus_CurrentEquivalence('Name', 'Bus', 'N_inputs',1,'N_outputs',1);
 
 
-pmsminverter = PMSMInverter('Name', "Inverter", 'InverterType', 'LinearLoss');
+pmsminverter = PMSMInverter('Name', "Inverter");
 pmsmmotor = PMSMMotor('Name', "Motor");
 shaftcoupler = ShaftCoupler('Name', "Shaft");
 propeller = Propeller('Name', "Propeller");

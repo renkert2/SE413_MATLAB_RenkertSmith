@@ -1,20 +1,20 @@
-classdef Battery < Component
+classdef Battery_Symbolic < Component
     % Battery Cell Specifications from: Nemes et. al. "Parameters identification using experimental measurements for equivalent circuit Lithium-Ion cell models"
-    % Battery Pack specifications (Q,N_s,N_p) from: Ferry, "Quadcopter Plant Model and Control System Development With MATLAB/Simulink Implementation"
+    % Battery Pack specifications (N_s and N_p) from: Ferry, "Quadcopter Plant Model and Control System Development With MATLAB/Simulink Implementation"
     
     % All parameters specified per cell except for N_series and N_parallel
     
     properties
-        Q {mustBeParam} = 840  %Cell Capacity - Coulombs
-        C_1 {mustBeParam} = 690.349 % Farads
-        R_1 {mustBeParam} = 0.003 % Ohms
-        C_2 {mustBeParam} = 1700.084 % Farads
-        R_2 {mustBeParam} = 0.0606 % Ohms
-        R_s {mustBeParam} = 0.09825 % Series Resistance - Ohms
-        V_OCV {mustBeParam} = 3.7 %Nominal Open Circuit Voltage, V_OCV(q)
+        Q = symParam('Q', 7500, ["positive","rational"])  %Battery Capacity - Coulombs
+        C_1 = symParam('C_1', 690.349, ["positive","rational"]) % Farads
+        R_1 = symParam('R_1', 0.003, ["positive","rational"]) % Ohms
+        C_2 = symParam('C_2', 1700.084, ["positive","rational"]) % Farads
+        R_2 = symParam('R_2', 0.0606, ["positive","rational"]) % Ohms
+        R_s = symParam('R_s', 0.09825, ["positive","rational"]) % Series Resistance - Ohms
+        V_OCV = symParam('V_OCV', 3.7, ["positive","rational"]) %Nominal Open Circuit Voltage, V_OCV(q)
         
-        N_s {mustBeParam} = 3 % Number of cells in series
-        N_p {mustBeParam} = 1 % Number of cells in parallel
+        N_s = symParam('N_s', 3, ["positive","integer"]) % Number of cells in series
+        N_p = symParam('N_p', 1, ["positive","integer"]) % Number of cells in parallel
     end
     
     methods (Access = protected)

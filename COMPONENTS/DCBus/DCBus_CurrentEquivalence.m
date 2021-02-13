@@ -5,9 +5,9 @@ classdef DCBus_CurrentEquivalence < Component
         N_inputs double {mustBeInteger} = 1
         N_outputs double {mustBeInteger} = 1
         
-        L double = 0
-        R double = 0.01
-        C double = 0
+        L {mustBeParam} = 0
+        R {mustBeParam} = 0
+        C {mustBeParam} = 0
     end
     
     methods (Access = protected)

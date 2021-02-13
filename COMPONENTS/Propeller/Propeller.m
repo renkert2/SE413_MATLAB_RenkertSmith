@@ -3,11 +3,11 @@ classdef Propeller < Component
     %   Detailed explanation goes here
     
     properties
-        J double = 4.4e-05 % Rotational Inertia - kg*m^2 from "Stabilization and Control of Unmanned Quadcopter (Jiinec)
-        k_Q double = 0.03/(2*pi) % Drag torque coefficient - N/(s*kg*m)=1/s^4, speed in rev/s.
-        k_T double = 0.05 % Thrust coefficient - N/(s^2*kg*m^2), speed in rev/s.
-        rho double = 1.205 % Air Density - kg/m^3
-        D double = 0.1270 % Propeller Diameter - m
+        J {mustBeParam} = 4.4e-05 % Rotational Inertia - kg*m^2 from "Stabilization and Control of Unmanned Quadcopter (Jiinec)
+        k_Q {mustBeParam} = 0.03/(2*pi) % Drag torque coefficient - N/(s*kg*m)=1/s^4, speed in rev/s.
+        k_T {mustBeParam} = 0.05 % Thrust coefficient - N/(s^2*kg*m^2), speed in rev/s.
+        rho {mustBeParam} = 1.205 % Air Density - kg/m^3
+        D {mustBeParam} = 0.1270 % Propeller Diameter - m
     end
     
     properties (Dependent)

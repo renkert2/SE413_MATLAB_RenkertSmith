@@ -3,16 +3,16 @@ classdef PMSMInverter < Component
     %   Detailed explanation goes here
     
     properties
-        InverterType InverterTypes = InverterTypes.LinearLoss
+        InverterType InverterTypes = InverterTypes.VoltageDependent
         
-        rated_current double = 20; %Rated Current - Amps
-        nominal_voltage double = 14.8; %Nominal (average) voltage - Volts
-        eta = 0.85; % Efficiency
+        rated_current {mustBeParam} = 20; %Rated Current - Amps
+        nominal_voltage {mustBeParam} = 14.8; %Nominal (average) voltage - Volts
+        eta {mustBeParam} = 0.85; % Efficiency
         
-        L double = 0;
-        C double = 0;
-        R_1 double = 0.0;
-        R_2 double = 1.5;
+        L {mustBeParam} = 0;
+        C {mustBeParam} = 0;
+        R_1 {mustBeParam} = 0.0;
+        R_2 {mustBeParam} = 1.5;
     end
     
     methods
@@ -65,9 +65,12 @@ classdef PMSMInverter < Component
             if obj.InverterType == InverterTypes.ConstantLoss
                 P(4) = Type_PowerFlow("xt");
                 E(4) = GraphEdge_Internal('PowerFlow',[P(3) P(4)],'Coefficient',[obj.R_1 obj.R_2],'TailVertex',V(1),'HeadVertex',V(5));
-            elseif obj.InverterType == InverterTypes.LinearLoss
+            elseif obj.InverterType == InverterTypes.VoltageDependent
                 P(4) = Type_PowerFlow("u1*xt");
                 E(4) = GraphEdge_Internal('PowerFlow',[P(3) P(4)],'Coefficient',[obj.R_1 obj.R_2],'TailVertex',V(1),'HeadVertex',V(5), 'Input', I(1));
+            elseif obj.InverterType == InverterTypes.CurrentDependent
+                P(4) = Type_PowerFlow("(1/u1)*xt^2");
+                E(4) = GraphEdge_Internal('PowerFlow',[P(3) P(4)],'Coefficient',[obj.R_1 obj.R_2],'TailVertex',V(1),'HeadVertex',V(5), 'Input', I(1)); 
             else
                 error('Invalid InverterType')
             end
