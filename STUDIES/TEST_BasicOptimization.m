@@ -62,6 +62,9 @@ opt_flight_time = -fval;
     end
 
     function [value, isterminal, direction] = emptyBattery(~,y)
+        % emptyBattery() is an event that terminates the simulation
+        % when the battery SOC drains to zero.
+        
         value = y(1);
         isterminal = 1;
         direction = 0;
