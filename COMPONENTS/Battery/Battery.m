@@ -15,6 +15,8 @@ classdef Battery < Component
         
         N_s {mustBeParam} = 3 % Number of cells in series
         N_p {mustBeParam} = 1 % Number of cells in parallel
+        
+        massPerCell {mustBeParam} = 0.08/3 % kg
     end
     
     methods (Access = protected)
@@ -51,6 +53,9 @@ classdef Battery < Component
             % Ports
             p(1) = ComponentPort('Description','Load Current','Element', Vertex(4));
             obj.Ports = p;
+            
+            % extrinsicProps
+            obj.extrinsicProps = extrinsicProp("Mass", obj.N_s*obj.N_p*obj.massPerCell);
         end
     end
 end
