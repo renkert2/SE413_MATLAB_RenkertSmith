@@ -1,6 +1,4 @@
 classdef PMSMInverter < Component
-    %DCDCCONVERTER Summary of this class goes here
-    %   Detailed explanation goes here
     
     properties
         InverterType InverterTypes = InverterTypes.VoltageDependent
@@ -51,7 +49,7 @@ classdef PMSMInverter < Component
             type = [VertexTypes.Voltage, VertexTypes.Current, VertexTypes.Temperature];
             init = [0 0 0];
             for i = 1:3
-                V(i+2) = GraphVertex_External('Description',desc(i),'Initial', init(i), 'VertexType', type(i));
+                V(i+2) = GraphVertex_External('Description',desc(i), 'VertexType', type(i));
             end
             
             % Inputs
@@ -77,11 +75,11 @@ classdef PMSMInverter < Component
             
             
             g = Graph(V, E);
-            obj.graph = g;
+            obj.Graph = g;
             
-            p(1) = ComponentPort('Description',"Voltage Input (DC)",'Element',obj.graph.Edges(1));
-            p(2) = ComponentPort('Description',"Current Output (q)",'Element',obj.graph.Edges(3));
-            p(3) = ComponentPort('Description',"Heat Sink",'Element',obj.graph.Vertices(5));
+            p(1) = ComponentPort('Description',"Voltage Input (DC)",'Element',obj.Graph.Edges(1));
+            p(2) = ComponentPort('Description',"Current Output (q)",'Element',obj.Graph.Edges(3));
+            p(3) = ComponentPort('Description',"Heat Sink",'Element',obj.Graph.Vertices(5));
             obj.Ports = p;
         end
     end

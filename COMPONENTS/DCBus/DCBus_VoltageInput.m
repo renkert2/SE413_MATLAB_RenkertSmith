@@ -37,8 +37,7 @@ classdef DCBus_VoltageInput < Component
                         
             V(V_cumsum(5)+1) = GraphVertex_External(...
                 'Description', "Heat Sink",...
-                'VertexType',"Temperature",...
-                'Initial',0);
+                'VertexType',"Temperature");
             
             % Elements that vary with N_inputs
             for i = 1:obj.N_inputs
@@ -51,8 +50,7 @@ classdef DCBus_VoltageInput < Component
                 
                 V(V_cumsum(3)+i) = GraphVertex_External(...
                     'Description', sprintf("Input Voltage %d", i),...
-                    'VertexType',"Voltage",...
-                    'Initial',0);
+                    'VertexType',"Voltage");
                 
                 I(I_cumsum(1)+i) = GraphInput(sprintf("Input %d",i));
                 
@@ -83,8 +81,7 @@ classdef DCBus_VoltageInput < Component
             for i = 1:obj.N_outputs
                 V(V_cumsum(4)+i) = GraphVertex_External(...
                     'Description', sprintf("Ouptut Current %d", i),...
-                    'VertexType',"Current",...
-                    'Initial',0);
+                    'VertexType',"Current");
                 
                 I(I_cumsum(2)+i) = GraphInput(sprintf("Output %d",i));
                 
@@ -101,7 +98,7 @@ classdef DCBus_VoltageInput < Component
             p(end+1) = ComponentPort('Description',"Heat Sink",'Element',V(V_cumsum(5)+1));
               
             g = Graph(V,E);
-            obj.graph = g;
+            obj.Graph = g;
             
             % Ports
             obj.Ports = p; 

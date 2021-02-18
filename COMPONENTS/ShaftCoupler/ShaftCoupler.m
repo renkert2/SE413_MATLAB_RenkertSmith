@@ -17,8 +17,8 @@ classdef ShaftCoupler < Component
             % Vertices
             V(1) = GraphVertex_Internal('Description', "Torque (T)", 'Capacitance', C(1), 'Coefficient', (1/obj.k), 'Initial', 0, 'VertexType', 'Torque');
             
-            V(2) = GraphVertex_External('Description', "Input Inertia (omega_1)", 'Initial', 0, 'VertexType', 'AngularVelocity');
-            V(3) = GraphVertex_External('Description', "Output Inertia (omega_2)", 'Initial', 0, 'VertexType', 'AngularVelocity');
+            V(2) = GraphVertex_External('Description', "Input Inertia (omega_1)", 'VertexType', 'AngularVelocity');
+            V(3) = GraphVertex_External('Description', "Output Inertia (omega_2)", 'VertexType', 'AngularVelocity');
             
             % Inputs
             
@@ -36,7 +36,7 @@ classdef ShaftCoupler < Component
                 'HeadVertex',V(3));
             
             g = Graph(V,E);
-            obj.graph = g;
+            obj.Graph = g;
             
             % Ports
             p(1) = ComponentPort('Description',"Inertia Input",'Element',E(1));

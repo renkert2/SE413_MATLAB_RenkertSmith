@@ -38,9 +38,9 @@ classdef PMSMMotor < Component
             V(1) = GraphVertex_Internal('Description', "Inductance (i_q)", 'Capacitance', C(1), 'Coefficient', obj.L, 'Initial', 0, 'VertexType', 'Current');
             V(2) = GraphVertex_Internal('Description', "Inertia (omega_m)", 'Capacitance', C(1), 'Coefficient', obj.J, 'Initial', 0, 'VertexType', 'AngularVelocity');
             
-            V(3) = GraphVertex_External('Description', "Input Voltage (v_q)",'Initial',0, 'VertexType', 'Voltage');
-            V(4) = GraphVertex_External('Description', "Mechanical Load (T_l)",'Initial',0, 'VertexType', 'Torque');
-            V(5) = GraphVertex_External('Description', "Heat Sink",'Initial',0, 'VertexType', 'Temperature');
+            V(3) = GraphVertex_External('Description', "Input Voltage (v_q)", 'VertexType', 'Voltage');
+            V(4) = GraphVertex_External('Description', "Mechanical Load (T_l)", 'VertexType', 'Torque');
+            V(5) = GraphVertex_External('Description', "Heat Sink", 'VertexType', 'Temperature');
             
             % Inputs
             
@@ -76,7 +76,7 @@ classdef PMSMMotor < Component
                 'HeadVertex',V(5));
                        
             g = Graph(V, E);
-            obj.graph = g;
+            obj.Graph = g;
             
             % Ports            
             p(1) = ComponentPort('Description',"Voltage Input",'Element',E(1));

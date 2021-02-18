@@ -1,3 +1,4 @@
+addpath('STUDIES')
 if ~(exist('batt_opt', 'var') == 1)
     batt_opt = BatteryOptimization();
 end
@@ -8,7 +9,7 @@ export_path = "C:\Users\prenk\Box\ARG_Student_Reports\Philip Renkert\Weekly Repo
 [opt_N_p, opt_flight_time] = batt_opt.Optimize();
 
 %% Visualize the Design Space
-n_p_vals = linspace(batt_opt.N_p_bounds(1), batt_opt.N_p_bounds(2), 25);
+n_p_vals = linspace(batt_opt.N_p_bounds(1), batt_opt.N_p_bounds(2), 30);
 flight_times = arrayfun(@(x) flightTime(batt_opt, x), n_p_vals);
 
 %%
@@ -23,6 +24,11 @@ p = plot(opt_N_p, opt_flight_time, '.r', 'MarkerSize', 20);
 datatip(p, opt_N_p, opt_flight_time);
 hold off
 saveas(gcf, export_path + "NpvsFlightTime_Hover", 'svg')
+
+%% Simulate at Optimum
+
+%[t,y] = Simulate(batt_opt, opt_N_p);
+%[t,y] = Simulate(batt_opt, 1);
 
 %% Adjust Input Schedule
 

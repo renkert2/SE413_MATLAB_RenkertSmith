@@ -37,7 +37,7 @@ classdef DCDCConverter < Component
             type = [VertexTypes.Current, VertexTypes.Voltage, VertexTypes.Temperature];
             init = [0 0 0];
             for i = 1:3
-                V(i+4) = GraphVertex_External('Description',desc(i),'Initial', init(i), 'VertexType', type(i));
+                V(i+4) = GraphVertex_External('Description',desc(i), 'VertexType', type(i));
             end
             
             % Inputs
@@ -56,7 +56,7 @@ classdef DCDCConverter < Component
             E(4).Input = I(2);
             
             g = Graph(V, E);
-            obj.graph = g;
+            obj.Graph = g;
             
             p(1) = ComponentPort('Description',"Voltage Input",'Element',obj.graph.Edges(1));
             p(2) = ComponentPort('Description',"Current Output",'Element',obj.graph.Edges(5));

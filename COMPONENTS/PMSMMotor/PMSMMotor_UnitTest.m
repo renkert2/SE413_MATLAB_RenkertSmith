@@ -1,5 +1,5 @@
 motor = PMSMMotor('Name', "PMSM Motor");
-motor_model = GraphModel(motor.graph);
+motor_model = GraphModel(motor);
 %% 
 motor_model.StateNames
 motor_model.InputNames
@@ -14,4 +14,4 @@ disturbances = [input_voltage; load_torque; 0]; % Apply load torque at 0.25 seco
 close all
 figure
 
-motor_model.Simulate([], disturbances, [0 10]);
+motor_model.Simulate([], disturbances, [], [0 10]);

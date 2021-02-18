@@ -37,8 +37,7 @@ classdef DCBus_CurrentEquivalence < Component
                         
             V(V_cumsum(4)+1) = GraphVertex_External(...
                 'Description', "Heat Sink",...
-                'VertexType',"Temperature",...
-                'Initial',0);
+                'VertexType',"Temperature");
             
             % Elements that vary with N_inputs
             for i = 1:obj.N_inputs
@@ -68,8 +67,7 @@ classdef DCBus_CurrentEquivalence < Component
             for i = 1:obj.N_outputs
                 V(V_cumsum(3)+i) = GraphVertex_External(...
                     'Description', sprintf("Ouptut Current %d", i),...
-                    'VertexType',"Current",...
-                    'Initial',0);
+                    'VertexType',"Current");
                 
                 E(E_cumsum(2)+i) = GraphEdge_Internal(...
                     'PowerFlow',PF(1),...
@@ -83,7 +81,7 @@ classdef DCBus_CurrentEquivalence < Component
             p(end+1) = ComponentPort('Description',"Heat Sink",'Element',V(V_cumsum(4)+1));
               
             g = Graph(V,E);
-            obj.graph = g;
+            obj.Graph = g;
             
             % Ports
             obj.Ports = p; 

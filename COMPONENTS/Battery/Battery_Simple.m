@@ -35,7 +35,7 @@ classdef Battery_Simple < Component
             Edge(2) = GraphEdge_Internal('PowerFlow',P(2),'Coefficient',obj.N_s/obj.N_p*obj.R_s,'TailVertex',Vertex(2),'HeadVertex',Vertex(3));
             
             g = Graph(Vertex, Edge);
-            obj.graph = g;
+            obj.Graph = g;
 
             % Ports
             p(1) = ComponentPort('Description','Load Current','Element', Vertex(2));

@@ -34,8 +34,8 @@ classdef Battery < Component
             Vertex(1) = GraphVertex_Internal('Description', "Battery SOC", 'Capacitance', C(1), 'Coefficient', obj.N_s*obj.N_p*obj.Q*obj.V_OCV, 'Initial', 1, 'VertexType','Abstract');
             Vertex(2) = GraphVertex_Internal('Description', "Capacitance 1", 'Capacitance', C(2), 'Coefficient', obj.N_p/obj.N_s*obj.C_1, 'Initial', 0, 'VertexType', 'Voltage');
             Vertex(3) = GraphVertex_Internal('Description', "Capacitance 2", 'Capacitance', C(2), 'Coefficient', obj.N_p/obj.N_s*obj.C_2, 'Initial', 0, 'VertexType', 'Voltage');
-            Vertex(4) = GraphVertex_External('Description', "Load Current", 'Initial', 0, 'VertexType', 'Current');
-            Vertex(5) = GraphVertex_External('Description', "Heat Sink", 'Initial', 0, 'VertexType', 'Temperature');
+            Vertex(4) = GraphVertex_External('Description', "Load Current", 'VertexType', 'Current');
+            Vertex(5) = GraphVertex_External('Description', "Heat Sink", 'VertexType', 'Temperature');
             
             % Inputs
             
@@ -48,7 +48,7 @@ classdef Battery < Component
             Edge(6) = GraphEdge_Internal('PowerFlow',P(3),'Coefficient',obj.N_s/obj.N_p*obj.R_s,'TailVertex',Vertex(4),'HeadVertex',Vertex(5));
             
             g = Graph(Vertex, Edge);
-            obj.graph = g;
+            obj.Graph = g;
 
             % Ports
             p(1) = ComponentPort('Description','Load Current','Element', Vertex(4));
