@@ -1,23 +1,22 @@
-classdef BatteryOptimization < handle
+classdef BatteryOptimization_SingleRotor < handle
 
     properties (Constant)
         vehicle_mass = 0.284 - 0.080; % kg
         mass_per_cell = 0.08/3;
-        disturbances = zeros(14,1);
+        disturbances = zeros(5,1);
     end
     
     properties
-        quad_rotor
-        quad_rotor_model
+        single_rotor
+        single_rotor_model
         comps
         
         stc
         
-        N_p_bounds = [1.8,20];
-        nominal_q
+        N_p_bounds = [0.3,50];
         
-        mission_thrust_factor (1,:) = 1; % mission thrust factor = 1 -> input will be calculated to maintain hover
-        mission_thrust_times (1,:) = 0; % mission thrust times -> starting times corresponding to mission_thrust_factors
+        mission_thrust_factor = 1; % mission thrust factor = 1 -> input will be calculated to maintain hover
+        mission_thrust_times = 0; % mission thrust times -> starting times corresponding to mission_thrust_factors
         input_sched;
     end
     
@@ -28,36 +27,21 @@ classdef BatteryOptimization < handle
         
         function init(obj)
             batt = Battery('Name', "Symbolic Battery", 'N_p', symParam('N_p', 1));
-            obj.quad_rotor = QuadRotor('Battery', batt);
-            obj.quad_rotor.createModel;
+            obj.single_rotor = SingleRotor('Battery', batt);
+            obj.single_rotor.createModel;
 
-            prop = obj.quad_rotor.Components(end);
+            prop = obj.single_rotor.Components(end);
             
             obj.stc = prop.square_thrust_coeff;
-            
-            nq = solve(batt.V_OCV_curve == 1);
-            obj.nominal_q = double(nq(1));
         end
         
         function [x_ss, input_sol] = calcSteadyState(obj, N_p, reqd_thrust)
             reqd_speed = sqrt((reqd_thrust/obj.stc));
             
-            subs_vars = [sym('N_p'), sym('x16'), sym('x1')];
-            subs_vals = [N_p, reqd_speed, obj.nominal_q];
+            subs_vars = [sym('N_p'), sym('x7')];
+            subs_vals = [N_p, reqd_speed];
             
-            %dyn_eqns
-            %         2       "Battery"      "Capacitance 1"         Voltage        
-            %         3       "Battery"      "Capacitance 2"         Voltage        
-            %         4       "Motor"        "Inductance (i_q)"      Current        
-            %         5       "Motor"        "Inertia (omega_m)"     AngularVelocity
-            %         12       "Shaft"        "Torque (T)"            Torque         
-            %         16      "Propeller"    "Inertia (omega)"       AngularVelocity
-            
-            dyn_eqns = obj.quad_rotor.Model.f_sym([2,3,4,5,12,16]);
-            dyn_eqns = subs(dyn_eqns, [sym('u2'), sym('u3'), sym('u4'), sym('x6'), sym('x8'), sym('x10')],[sym('u1'), sym('u1'), sym('u1'), sym('x4'), sym('x4'), sym('x4')]);
-            dyn_eqns = subs(dyn_eqns, subs_vars, subs_vals);
-            
-            
+            dyn_eqns = subs(obj.single_rotor.Model.f_sym(2:7), subs_vars, subs_vals);
             
             assume(0<sym('u1') & sym('u1')<2);
             
@@ -66,7 +50,7 @@ classdef BatteryOptimization < handle
             input_sol = double(x_ss.u1(1));
         end
 
-        function [t, y, p_f] = Simulate(obj, N_p, input_sched)
+        function [t,y] = Simulate(obj, N_p, input_sched)
             persistent N_p_last
             
             if nargin == 2
@@ -84,7 +68,7 @@ classdef BatteryOptimization < handle
             end
             % System Simulation
             sim_opts = odeset('Events', @emptyBattery);
-            [t,y, p_f] = Simulate(obj.quad_rotor.Model, input_sched, obj.disturbances, N_p, [0 5e4], 'PlotStates', false, 'Solver', @ode23tb, 'SolverOpts', sim_opts);
+            [t,y] = Simulate(obj.single_rotor.Model, input_sched, obj.disturbances, N_p, [0 5e4], 'PlotStates', false, 'Solver', @ode23tb, 'SolverOpts', sim_opts);
             N_p_last = N_p;
             
             function [value, isterminal, direction] = emptyBattery(~,y)
@@ -109,7 +93,7 @@ classdef BatteryOptimization < handle
             end
             
             if numel(inputs) == 1
-                input_sched = repmat(inputs,4,1);
+                input_sched = inputs;
             else
                 vals = [0 inputs];
                 times = obj.mission_thrust_times;
@@ -119,7 +103,7 @@ classdef BatteryOptimization < handle
             obj.input_sched = input_sched;
             
             function input = input_sched_func(t)
-                input = repmat(vals(sum(t>=times') + 1),4,1);
+                input = vals(sum(t>=times') + 1);
             end
         end
             

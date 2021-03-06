@@ -1,6 +1,6 @@
-classdef Battery < Component
+classdef Battery_RC < Component
     % Battery Cell Specifications from: Nemes et. al. "Parameters identification using experimental measurements for equivalent circuit Lithium-Ion cell models"
-    % Battery Pack specifications (N_s and N_p) from: Ferry, "Quadcopter Plant Model and Control System Development With MATLAB/Simulink Implementation"
+    % Pack specs from Turnigy Graphene Panther 4000mAh 3S 75C Battery Pack w/XT90
     
     % All parameters specified per cell except for N_series and N_parallel
     
@@ -8,13 +8,22 @@ classdef Battery < Component
         N_p {mustBeParam} = 1 % Number of cells in parallel
         N_s {mustBeParam} = 3 % Number of cells in series
         Q {mustBeParam} = 14400 % Coulombs
+        specificEnergy {mustBeParam} =  0.412 / (14400*11.1) % kg / J
+        
         R_s {mustBeParam} = (10e-3) / 3 % Series Resistance - Ohms - From Turnigy Website
         
-        specificEnergy {mustBeParam} =  0.412 / (14400*11.1) % kg / J
-                
+        C_1 {mustBeParam} = 690.349 % Farads
+        R_1 {mustBeParam} = 0.003 % Ohms
+        C_2 {mustBeParam} = 1700.084 % Farads
+        R_2 {mustBeParam} = 0.0606 % Ohms
+        
         variableV_OCV logical = true
-        V_OCV_nominal {mustBeParam} = 3.7 %Nominal Open Circuit Voltage = V_OCV_nominal*V_OCV_curve(q)
-        V_OCV_curve = symfun(1, sym('q')) % Protected in set method 
+        V_OCV_nominal {mustBeParam} = 3.7 %Nominal Open Circuit Voltage = V_OCV_nominal*V_OCV_poly(q)
+        V_OCV_curve = symfun(1, sym('q')) % Protected in set method  
+    end
+    
+    properties (Dependent)
+        Energy % Joules
     end
     
     methods
@@ -33,25 +42,14 @@ classdef Battery < Component
         end
     end
     
-    properties (Dependent)
-        Energy % Joules
-    end
-    
-    properties (SetAccess = private)
-        Nominal_SOC double % SOC at which V_OCV(q) = V_OCV_nominal
-    end
-    
     methods (Access = protected)
         function init(obj)
-            if obj.variableV_OCV
-                if isequal(obj.V_OCV_curve, symfun(1, sym('q')))
-                    load Lipo_42V_Lookup.mat LiPo_42V_Lookup
-                    obj.V_OCV_curve = LiPo_42V_Lookup;
-                end
-                
-                nq = solve(obj.V_OCV_curve == 1);
-                obj.Nominal_SOC = double(nq(1));
-            end
+           if obj.variableV_OCV
+               if isequal(obj.V_OCV_curve, symfun(1, sym('q')))
+                   load Lipo_42V_Lookup.mat LiPo_42V_Lookup
+                   obj.V_OCV_curve = LiPo_42V_Lookup;
+               end
+           end
         end
         
         function DefineComponent(obj)
@@ -61,31 +59,38 @@ classdef Battery < Component
             
             % PowerFlow Types
             P(1) = Type_PowerFlow(obj.V_OCV_curve(sym('xt'))*sym('xh'));
-            P(2) = Type_PowerFlow("xt^2");
+            P(2) = Type_PowerFlow("xt*xh");
+            P(3) = Type_PowerFlow("xt^2");
             
             % Vertices
             Vertex(1) = GraphVertex_Internal('Description', "Battery SOC", 'Capacitance', C(1), 'Coefficient', obj.N_s*obj.N_p*obj.Q*obj.V_OCV_nominal, 'Initial', 1, 'VertexType','Abstract');
-            Vertex(2) = GraphVertex_External('Description', "Load Current", 'VertexType', 'Current');
-            Vertex(3) = GraphVertex_External('Description', "Heat Sink", 'VertexType', 'Temperature');
+            Vertex(2) = GraphVertex_Internal('Description', "Capacitance 1", 'Capacitance', C(2), 'Coefficient', obj.N_p/obj.N_s*obj.C_1, 'Initial', 0, 'VertexType', 'Voltage');
+            Vertex(3) = GraphVertex_Internal('Description', "Capacitance 2", 'Capacitance', C(2), 'Coefficient', obj.N_p/obj.N_s*obj.C_2, 'Initial', 0, 'VertexType', 'Voltage');
+            Vertex(4) = GraphVertex_External('Description', "Load Current", 'VertexType', 'Current');
+            Vertex(5) = GraphVertex_External('Description', "Heat Sink", 'VertexType', 'Temperature');
             
             % Inputs
             
             % Edges
-            Edge(1) = GraphEdge_Internal('PowerFlow',P(1),'Coefficient',obj.N_s*obj.V_OCV_nominal,'TailVertex',Vertex(1),'HeadVertex',Vertex(2));
-            Edge(2) = GraphEdge_Internal('PowerFlow',P(2),'Coefficient',obj.N_s/obj.N_p*obj.R_s,'TailVertex',Vertex(2),'HeadVertex',Vertex(3));
+            Edge(1) = GraphEdge_Internal('PowerFlow',P(1),'Coefficient',obj.N_s*obj.V_OCV_nominal,'TailVertex',Vertex(1),'HeadVertex',Vertex(4));
+            Edge(2) = GraphEdge_Internal('PowerFlow',P(3),'Coefficient',obj.N_p/obj.N_s*1/obj.R_1,'TailVertex',Vertex(2),'HeadVertex',Vertex(5));
+            Edge(3) = GraphEdge_Internal('PowerFlow',P(3),'Coefficient',obj.N_p/obj.N_s*1/obj.R_2,'TailVertex',Vertex(3),'HeadVertex',Vertex(5));
+            Edge(4) = GraphEdge_Internal('PowerFlow',P(2),'Coefficient',1,'TailVertex',Vertex(4),'HeadVertex',Vertex(2));
+            Edge(5) = GraphEdge_Internal('PowerFlow',P(2),'Coefficient',1,'TailVertex',Vertex(4),'HeadVertex',Vertex(3));
+            Edge(6) = GraphEdge_Internal('PowerFlow',P(3),'Coefficient',obj.N_s/obj.N_p*obj.R_s,'TailVertex',Vertex(4),'HeadVertex',Vertex(5));
             
             g = Graph(Vertex, Edge);
             obj.Graph = g;
 
             % Ports
-            p(1) = ComponentPort('Description','Load Current','Element', Vertex(2));
+            p(1) = ComponentPort('Description','Load Current','Element', Vertex(4));
             obj.Ports = p;
             
             % extrinsicProps
             obj.extrinsicProps = extrinsicProp("Mass", obj.Energy*obj.specificEnergy);
         end
     end
-     
+    
     methods (Static)
         function V_OCV_sym = fitV_OCV(q, v, v_nominal, opts)
             arguments
