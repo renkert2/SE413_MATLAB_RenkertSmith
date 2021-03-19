@@ -73,20 +73,10 @@ PF_Aero.PropStruct = propStruct;
 save PF_Aero.mat PF_Aero
 
 %% 
-diam_bkpt = linspace(min(diameter), max(diameter), 100);
-pitch_bkpt = linspace(min(pitch), max(pitch), 100);
-[diam_grid, pitch_grid] = meshgrid(diam_bkpt, pitch_bkpt);
-
-pitch_lb = @(d) 0.5842*d - 0.0342;
-pitch_ub = @(d) 0.6684*d + 0.1022;
 
 figure(1)
-plot(ct_fit, [diameter, pitch], ct)
-zlim([0 max(ct)])
-hold on
-fplot(pitch_lb, [0 0.45], '-r')
-fplot(pitch_ub, [0 0.45], '-r')
-hold off
+plot(PF_Aero.Fit.ct, [PF_Aero.Data.Diameter, PF_Aero.Data.Pitch], PF_Aero.Data.ct)
+zlim([0 max(PF_Aero.Data.ct)])
 title('Propeller Thrust Coefficient')
 xlabel('Diameter (m)')
 ylabel('Pitch (m)')
@@ -94,12 +84,8 @@ zlabel('C_T')
 
 
 figure(2)
-plot(cp_fit, [diameter, pitch], cp)
-zlim([0 max(cp)])
-hold on
-fplot(pitch_lb, [0 0.45], '-r')
-fplot(pitch_ub, [0 0.45], '-r')
-hold off
+plot(PF_Aero.Fit.cp, [PF_Aero.Data.Diameter, PF_Aero.Data.Pitch], PF_Aero.Data.cp)
+zlim([0 max(PF_Aero.Data.cp)])
 title('Propeller Power Coefficient')
 xlabel('Diameter (m)')
 ylabel('Pitch (m)')

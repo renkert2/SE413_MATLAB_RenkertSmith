@@ -11,16 +11,33 @@ classdef Battery < Component
         R_s {mustBeParam} = (10e-3) / 3 % Series Resistance - Ohms - From Turnigy Website
         
         specificEnergy {mustBeParam} =  0.412 / (14400*11.1) % kg / J
-                
+        
         variableV_OCV logical = true
         V_OCV_nominal {mustBeParam} = 3.7 %Nominal Open Circuit Voltage = V_OCV_nominal*V_OCV_curve(q)
-        V_OCV_curve = symfun(1, sym('q')) % Protected in set method 
+        V_OCV_curve = symfun(1, sym('q')) % Protected in set method
+    end
+        
+    properties (Dependent)
+        Energy % Joules
+        Capacity % Coulombs = 1 A*s
+    end
+    
+    properties (SetAccess = private)
+        V_OCV_averaged
+        
+        Averaged_SOC double % SOC at which V_OCV(q) = V_OCV_Average
+        Nominal_SOC double % SOC at which V_OCV(q) = V_OCV_nominal
     end
     
     methods
         function E = get.Energy(obj)
             E = obj.N_s*obj.N_p*obj.Q*obj.V_OCV_nominal;
         end
+        
+        function C = get.Capacity(obj)
+            C = obj.Q*obj.N_p;
+        end
+        
         function set.V_OCV_curve(obj,arg)
             if isa(arg, 'BattLookup')
                 vocv = obj.fitV_OCV(arg.SOC, arg.V_OCV, arg.V_OCV_nominal);
@@ -30,15 +47,16 @@ classdef Battery < Component
             else
                 error('V_OCV_curve must be of type BattLookup or symfun');
             end
+             
+            nq = double(vpasolve(obj.V_OCV_curve == 1));
+            obj.Nominal_SOC = nq(1);
+            
+            ave_vocv_curve = double(vpaintegral(obj.V_OCV_curve, 0, 1));
+            aq = double(vpasolve(obj.V_OCV_curve == ave_vocv_curve));
+            obj.Averaged_SOC = aq(1);
+            
+            obj.V_OCV_averaged = ave_vocv_curve*obj.V_OCV_nominal;
         end
-    end
-    
-    properties (Dependent)
-        Energy % Joules
-    end
-    
-    properties (SetAccess = private)
-        Nominal_SOC double % SOC at which V_OCV(q) = V_OCV_nominal
     end
     
     methods (Access = protected)
@@ -48,9 +66,6 @@ classdef Battery < Component
                     load Lipo_42V_Lookup.mat LiPo_42V_Lookup
                     obj.V_OCV_curve = LiPo_42V_Lookup;
                 end
-                
-                nq = solve(obj.V_OCV_curve == 1);
-                obj.Nominal_SOC = double(nq(1));
             end
         end
         

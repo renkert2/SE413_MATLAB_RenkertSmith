@@ -45,6 +45,13 @@ classdef Boundary
             l = (d <= 0);
         end
         
+        function [x1_vals, x2_vals] = createGrid(obj, res)
+            % Creates grid of res number of points along x_1 and x_2 dimensions.
+            % Useful for surf plots over valid domain
+            x1_vals = linspace(obj.X_lb(1), obj.X_ub(1), res);
+            x2_vals = linspace(obj.X_lb(2), obj.X_ub(2), res);
+        end
+        
         function plot(obj)
             scatter(obj.Data(:,1), obj.Data(:,2))
             hold on
