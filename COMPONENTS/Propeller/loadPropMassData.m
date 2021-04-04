@@ -16,7 +16,7 @@ massTable.Pitch_m = massTable.Pitch_m*in2m;
 massTable = rmmissing(massTable)
 
 %%
-opts = fitoptions('poly2','Lower', [-Inf, -Inf, 0]);
+opts = fitoptions('poly2','Lower', [-Inf, 0, 0], 'Upper', [inf, 0, 0]);
 massFit = fit(massTable.Diameter_m, massTable.Weight_kg, 'poly2', opts);
 
 scatter(massTable.Diameter_m, massTable.Weight_kg)

@@ -3,27 +3,40 @@ batt = Battery('N_p', symParam('N_p_batt',1));
 qr = QuadRotor('Battery', batt);
 qr.Name = "Quadrotor";
 %%
-np_vals = 0.1:0.05:2;
-flight_times = zeros(size(np_vals));
-flight_times_simple = flight_times;
-ft_simple_func = matlabFunction(flightTime_Simple(qr);
+np_vals = linspace(0.999,1,50);
+flight_times_nosim = zeros(size(np_vals));
+flight_times_sim = flight_times_nosim;
+flight_times_cupdate = flight_times_nosim;
+qr.updateSymParamVals();
+qr.calcControllerGains;
 
 for i = 1:numel(np_vals)
     qr.updateSymParamVals(np_vals(i));
-    flight_times(i) = flightTime(qr);
-    flight_times_simple(i) = flightTime_Simple(qr);
+    flight_times_nosim(i) = flightTime(qr,'SimulationBased',false);
+    flight_times_sim(i) = flightTime(qr,'SimulationBased',true, 'InterpolateTime', true);
+    disp(qr.K_PID_height)
+end
+
+for i = 1:numel(np_vals)
+    qr.updateSymParamVals(np_vals(i));
+    qr.calcControllerGains;
+    flight_times_cupdate(i) = flightTime(qr,'SimulationBased',true);
+    disp(qr.K_PID_height)
 end
 
 %%
-plot(np_vals, flight_times_nointerp)
+figure(1)
+plot(np_vals, flight_times_nosim)
+title("Static Objective")
+xlabel('N_p')
+ylabel('t')
 
-%% 
-opts = optimoptions('fmincon','Display','iter-detailed', 'DiffMinChange',0.001, 'PlotFcn','optimplotx');
-[x,fval,exitflag,output] = fmincon(@(x) -flight_time(x,qr), 1, [],[],[],[],0.1,2,[],opts);
+figure(2)
+plot(np_vals, flight_times_sim, np_vals, flight_times_cupdate)
+title("Simulation-Based Objective")
+xlabel('N_p')
+ylabel('t')
+legend(["Static Control Gains", "Updated Control Gains"])
+
 %%
-[x,fval,exitflag,output] = ga(@(x) -flight_time(x,qr), 1, [],[],[],[],0.1,2);
-
-function f = flight_time(x, qr)
-    qr.updateSymParamVals(x);
-    f = flightTime(qr);
-end
+np_vals = linspace(0.9999999999,1,50);

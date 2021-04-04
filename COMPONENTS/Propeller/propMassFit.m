@@ -15,6 +15,7 @@ classdef propMassFit
             out_points = ~obj.isInBoundary(D);
             if any(out_points)
                 out_str = num2str(find(out_points), '%d, ');
+                out_str = [out_str, num2str(D)];
                 warning("Extrapolating points: %s",out_str);
             end
             
