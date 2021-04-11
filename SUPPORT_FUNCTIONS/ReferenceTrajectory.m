@@ -24,6 +24,7 @@ classdef ReferenceTrajectory
         
         function plot(obj, t_range, varargin)
            fplot(obj.R,  t_range, varargin{:})
+           title('Reference Trajectory')
            xlabel('t')
            ylabel('Reference Height')
         end

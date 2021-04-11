@@ -1,6 +1,7 @@
 classdef Battery < Component
     % Battery Cell Specifications from: Nemes et. al. "Parameters identification using experimental measurements for equivalent circuit Lithium-Ion cell models"
     % Battery Pack specifications (N_s and N_p) from: Ferry, "Quadcopter Plant Model and Control System Development With MATLAB/Simulink Implementation"
+    % Pack specs from Turnigy Graphene Panther 4000mAh 3S 75C Battery Pack w/XT90
     
     % All parameters specified per cell except for N_series and N_parallel
     
@@ -25,8 +26,8 @@ classdef Battery < Component
     properties (SetAccess = private)
         V_OCV_averaged
         
-        Averaged_SOC double % SOC at which V_OCV(q) = V_OCV_Average
-        Nominal_SOC double % SOC at which V_OCV(q) = V_OCV_nominal
+        Averaged_SOC double = 1 % SOC at which V_OCV(q) = V_OCV_Average
+        Nominal_SOC double = 1 % SOC at which V_OCV(q) = V_OCV_nominal
     end
     
     methods
@@ -38,7 +39,7 @@ classdef Battery < Component
             C = obj.Q*obj.N_p;
         end
         
-        function set.V_OCV_curve(obj,arg)
+        function setV_OCV_curve(obj,arg)
             if isa(arg, 'BattLookup')
                 vocv = obj.fitV_OCV(arg.SOC, arg.V_OCV, arg.V_OCV_nominal);
                 obj.V_OCV_curve = vocv;
@@ -64,8 +65,14 @@ classdef Battery < Component
             if obj.variableV_OCV
                 if isequal(obj.V_OCV_curve, symfun(1, sym('q')))
                     load Lipo_42V_Lookup.mat LiPo_42V_Lookup
-                    obj.V_OCV_curve = LiPo_42V_Lookup;
+                    setV_OCV_curve(obj,LiPo_42V_Lookup);
                 end
+            else
+                obj.V_OCV_curve = symfun(1, sym('q'));
+                obj.V_OCV_averaged = obj.V_OCV_nominal;
+                
+                obj.Averaged_SOC = 1; % SOC at which V_OCV(q) = V_OCV_Average
+                obj.Nominal_SOC = 1;
             end
         end
         

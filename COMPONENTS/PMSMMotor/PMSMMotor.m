@@ -3,7 +3,8 @@ classdef PMSMMotor < Component
     %   Default parameters from Ferry 2017 - 'Quadcopter Plant Model and Control System Development With MATLAB/Simulink Implementation'
     
     properties
-        L {mustBeParam} = 1.17e-4 % Leakage Inductance - H
+        M {mustBeParam} = 0.04;
+        L {mustBeParam} = 1.17e-4 % Inductance - H
         J {mustBeParam} = 6.5e-6 % Mechanical rotational inertia - Modified to better reflect Ferry's simulation results
         K_t {mustBeParam} = 0.00255 % Torque/Speed Coefficient - Nm/A
         R_1 {mustBeParam} = 0.117 % Phase Resistance - Ohms
@@ -83,6 +84,9 @@ classdef PMSMMotor < Component
             p(2) = ComponentPort('Description',"Torque Output",'Element',E(3));
             p(3) = ComponentPort('Description',"Heat Sink",'Element',V(5));
             obj.Ports = p;
+            
+            % Extrinsic Props
+            obj.extrinsicProps = extrinsicProp("Mass", obj.M);
         end
     end
 end

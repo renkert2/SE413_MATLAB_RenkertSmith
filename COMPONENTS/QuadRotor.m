@@ -1,9 +1,10 @@
 classdef QuadRotor < System
     properties
-        StandardEmptyWeight = extrinsicProp('Mass', 0.284 - 0.080 - 4*0.008) % Mass Not Including Battery and Propellers.  Those are added later
+        StandardEmptyWeight = extrinsicProp('Mass', 0.284 - 0.080 - 4*0.008 - 4*0.04) % Mass Not Including Battery, Propellers, and Motors.  Those are added later
         
-        K_PI_speed % Inner Speed Loop controller Gains
-        K_PID_height % Outer Height Loop controller Gains
+        K_PI_speed % Inner Rotor Speed Loop controller Gains
+        K_PD_vel % Outer Height Loop controller Gains
+        K_P_height % Outer Velocity Loop controller gains
     end
     
     properties (SetAccess = private)
@@ -74,6 +75,7 @@ classdef QuadRotor < System
         
         function updateSymParamVals(obj, sym_param_vals)
             if nargin == 2
+                assert(numel(sym_param_vals) == obj.SymParams.N, 'Incorrect number of sym param vals');
                 obj.sym_param_vals = sym_param_vals;
             else
                 obj.sym_param_vals = obj.SymParams.Vals;
@@ -127,10 +129,12 @@ classdef QuadRotor < System
             %1-5.  States 1-5
             %6.  Bus Voltage
             %7.  Bus Current
-            %8.  Thrust - Total
-            outs = [states 18 19 28];
+            %8.  Inverter Current (DC)
+            %9.  Inverter Voltage (Q)
+            %10.  Thrust - Total
+            outs = [states 18 19 20 21 28];
             simple_model.Ny = numel(outs);
-            simple_model.OutputDescriptions = [simple_model.StateDescriptions; "Bus Voltage"; "Bus Current"; "Total Thrust"];
+            simple_model.OutputDescriptions = [simple_model.StateDescriptions; "Bus Voltage"; "Bus Current"; "Inverter Current (DC)"; "Inverter Voltage (q)"; "Total Thrust"];
             
             obj.SymVars = SymVars('Nx', simple_model.Nx, 'Nd', simple_model.Nd, 'Nu', simple_model.Nu);
             
@@ -307,6 +311,42 @@ classdef QuadRotor < System
             tr = T_max / T_hover;
         end
         
+        function [eta,P] = calcEfficiency(obj,u,q)
+            % Define x_power as the power output from that component
+            % input_power is chemical power from battery
+            
+            arguments
+                obj
+                u double = []
+                q double = []
+            end
+            
+            if isempty(u)
+                y = obj.SS_QAve.y;
+            else
+                [~,~,y] = obj.calcSteadyStateIO(u,q);
+            end
+
+            bus_power = y(6).*y(7); % bus voltage (DC) * bus current (DC)
+            inv_power = 4*y(9).*y(2); % inverter voltage (q) * motor_current (q)
+            motor_power = 4*y(3).*y(4);
+            
+            inv_eta = inv_power ./ bus_power;
+            motor_eta = motor_power ./ inv_power;
+            
+            sys_eta= inv_eta*motor_eta;
+            
+            eta = struct();
+            eta.Inverter = inv_eta;
+            eta.Motor = motor_eta;
+            eta.Sys = sys_eta;
+            
+            P = struct();
+            P.Bus = bus_power;
+            P.Inverter = inv_power;
+            P.Motor = motor_power;
+        end
+        
         function [A,B,C,D] = calcLinearMatrices(obj, qrss)
             if nargin == 1
                 qrss = obj.SS_QAve;
@@ -324,35 +364,58 @@ classdef QuadRotor < System
             D = [0];
         end
         
-        function [K_PI_speed, K_PID_height] = calcControllerGains(obj, qrss)            
+        function [K_PI_speed, K_PD_vel, K_P_height] = calcControllerGains(obj, qrss)
             if nargin == 1
                 qrss = obj.SS_QAve;
             end
             
             %% Body Model
-            [Am,Bm,Cm,Dm] = calcBodyModel(obj);
-            b_ss = ss(Am,Bm,Cm,Dm);
+            [Am,Bm,~,Dm] = calcBodyModel(obj);
+            Cm = eye(2);
+            
+            B = ss(Am,Bm,Cm,Dm);
+            B.InputName = {'T'};
+            B.OutputName = {'Y','Ydot'};
             
             %% PowerTrain Model
             [Apt, Bpt, Cpt, Dpt] = calcLinearMatrices(obj, qrss);
-            pt_ss = ss(Apt,Bpt,Cpt,Dpt);
             gain = Dpt-Cpt*(Apt\Bpt);
             dom_pole = min(abs(eigs(Apt)));
             den = [(1/dom_pole), 1];
-            pt_simple = [tf(gain(1), den); tf(gain(2), den)];
+            PT = [tf(gain(1), den); tf(gain(2), den)];
+            PT.InputName = {'u'};
+            PT.OutputName = {'W','T'};
             
             %% Inner Speed Loop
-            PI_speed = pidtune(pt_simple(1),'PI');
-            speed_loop = feedback(PI_speed*pt_simple(1),1);
+            opts = pidtuneOptions('PhaseMargin', 90);
+            PI_speed = pidtune(PT(1),'PI', 10,opts);
+            PI_speed.InputName = 'e_w';
+            PI_speed.OutputName = 'u';
+            
+            sb_speed = sumblk('e_w = r_w - W');
+            
+            speed_loop = connect(sb_speed, PI_speed, PT, 'r_w', {'W', 'T'});          
+            %% Velocity (ydot) Loop
+            vel_plant = connect(speed_loop, B, 'r_w', 'Ydot');
+            opts = pidtuneOptions('PhaseMargin', 90);
+            PD_vel = pidtune(vel_plant,'PD', 5,opts);
+            PD_vel.InputName = 'e_v';
+            PD_vel.OutputName = 'r_w';
+            
+            sb_vel = sumblk('e_v = r_v - Ydot');
+            vel_loop = connect(sb_vel, PD_vel, speed_loop, B, 'r_v',{'Y','Ydot'});
+            %% Outer Height Loop
+            P_height = pidtune(vel_loop(1),'P',1);
+            
+            %% Set Gains
             K_PI_speed = [PI_speed.Kp, PI_speed.Ki];
             obj.K_PI_speed = K_PI_speed;
             
-            %% Outer Height Loop
-            outer_plant = series(speed_loop*gain(2)/gain(1), b_ss);
-            PID_height = pidtune(outer_plant,'PID');
-            %height_loop = feedback(PID_height*outer_plant, 1);
-            K_PID_height = [PID_height.Kp, PID_height.Ki, PID_height.Kd];
-            obj.K_PID_height = K_PID_height;
+            K_PD_vel = [PD_vel.Kp, PD_vel.Kd];
+            obj.K_PD_vel = K_PD_vel;
+            
+            K_P_height = P_height.Kp;
+            obj.K_P_height = K_P_height;
         end
         
         function [t_out, y_out, x_g_out, errFlag] = Simulate(obj, r, opts)
@@ -360,11 +423,13 @@ classdef QuadRotor < System
                 obj
                 r function_handle = (@(t) t>=0)
                 opts.ReferenceFilterTimeConstant double = 0.5
+                opts.MaxClimbRateReference double = 20
                 opts.MaxSimTime double = 5e4
                 opts.Timeout double = inf
                 opts.PlotResults logical = true
                 opts.FeedForwardW logical = true
                 opts.FeedForwardU logical = true
+                opts.SolverOpts cell = {}
             end
 
             % init
@@ -375,17 +440,17 @@ classdef QuadRotor < System
             % Indices in composite x = [x_g; x_b; x_sc; x_hc; x_r]
             % - x_g: States of Power Train (Graph Model)
             % - x_b: States of Body Model, x_b = [y, dot(y)]
-            % - x_sc: States of Speed Controller
-            % - x_hc: States of Height controller
+            % - x_sc: States of Rotor Speed Controller
+            % - x_vc: States of Velocity Controller
             % - x_r: States of Reference Input Filter
             
-            persistent i_x_g i_x_b i_x_sc i_x_hc i_x_r
+            persistent i_x_g i_x_b i_x_sc i_x_vc i_x_r
             if isempty(i_x_g)
                 i_x_g = 1:obj.SimpleModel.Nx;
                 i_x_b = i_x_g(end) + (1:2);
                 i_x_sc = i_x_b(end) + 1;
-                i_x_hc = i_x_sc(end) + 1;
-                i_x_r = i_x_hc(end) + 1;
+                i_x_vc = i_x_sc(end) + 1;
+                i_x_r = i_x_vc(end) + 1;
             end
             N_states = i_x_r(end);
             
@@ -400,15 +465,21 @@ classdef QuadRotor < System
             
             % Speed Controller
             % - Input: speed error signal
-            % - Output: speed control ouptut
+            % - Output: Inverter control ouptut
             f_sc = @(x_sc,u_sc) u_sc;
             g_sc = @(x_sc,u_sc) obj.K_PI_speed(1)*u_sc + obj.K_PI_speed(2)*x_sc;
             
+            % Velocity Controller
+            % - Input: velocity error signal
+            % - Output: Propeler Speed reference input
+            tau = 0.1; % Derivative filter time constant
+            f_vc = @(x_vc, u_vc) -(1/tau)*x_vc + u_vc;
+            g_vc = @(x_vc, u_vc) obj.K_PD_vel*([1/tau; -1/tau^2]*x_vc + [0; 1/tau]*u_vc);
+            
             % Height Controller
-            % - Input: [e_h; dot_e_h]
-            % - Output: height control ouptut
-            f_hc = @(x_hc,u_hc) u_hc(1);
-            g_hc = @(x_hc,u_hc) obj.K_PID_height*[u_hc(1); x_hc; u_hc(2)];
+            % - Input: [e_h]
+            % - Output: Desired Climb Rate
+            g_hc = @(u_hc) obj.K_P_height*u_hc;
             
             % Reference Filter
             % Input - reference signal r
@@ -440,7 +511,7 @@ classdef QuadRotor < System
             x_0(i_x_g(1)) = 1;
             
             % Run Simulation
-            sim_opts = odeset('Events', @emptyBattery, 'OutputFcn', @odeFunc); 
+            sim_opts = odeset('Events', @emptyBattery, 'OutputFcn', @odeFunc, 'RelTol', 1e-6, 'NonNegative', i_x_b(1), opts.SolverOpts{:}); 
             errFlag = 0;
             tic
             [t_out,x_out] = ode23tb(@(t,x) f_sys_cl(t,x), [0 opts.MaxSimTime], x_0, sim_opts);
@@ -460,17 +531,24 @@ classdef QuadRotor < System
                 x_g = x(i_x_g);
                 x_b = x(i_x_b);
                 x_sc = x(i_x_sc);
-                x_hc = x(i_x_hc);
+                x_vc = x(i_x_vc);
                 x_r = x(i_x_r);
                 
                 dot_x_r = f_r(x_r,r(t));
                 r_PD = g_r(x_r,r(t)); % Proportional and Derivative Terms of Filtered Reference Signal
                 
-                u_hc = r_PD-x_b;
-                dot_x_hc = f_hc(x_hc,u_hc);
-                y_hc = g_hc(x_hc, u_hc); % output of PID height controller = speed reference signal
+                u_hc = sqrtControl(r_PD(1)-x_b(1)); % Could use sqrt controller here
+                y_hc = g_hc(u_hc); % output of P height controller = speed reference signal
                 
-                u_sc = (y_hc - x_g(5)) + w_bar; % Propeller Speed error signal, essentially an acceleration command
+                %ff_vc = r_PD(2); % Need to implement feed-forward later
+                ff_vc = 0;
+                r_vc = y_hc + ff_vc;
+                r_vc = min(max(r_vc,-opts.MaxClimbRateReference),opts.MaxClimbRateReference);
+                u_vc = r_vc - x_b(2);
+                dot_x_vc = f_vc(x_vc, u_vc);
+                y_vc = g_vc(x_vc, u_vc);
+                
+                u_sc = (y_vc - x_g(5)) + w_bar; % Propeller Speed error signal, essentially an acceleration command
                 dot_x_sc = f_sc(x_sc, u_sc);
                 y_sc = g_sc(x_sc, u_sc); % Output of PI Speed Controller is input to Graph (PowerTrain) Model
                 
@@ -481,13 +559,9 @@ classdef QuadRotor < System
                 
                 T = y_g(end) - T_bar;
                 u_b = T;
-                if x_b(1) <= 0
-                    x_b(1) = 0;
-                    x_b(2) = max(x_b(2),0);
-                end
                 dot_x_b = f_b(x_b, u_b);
                 
-                x_dot = [dot_x_g; dot_x_b; dot_x_sc; dot_x_hc; dot_x_r];
+                x_dot = [dot_x_g; dot_x_b; dot_x_sc; dot_x_vc; dot_x_r];
             end
             function [value, isterminal, direction] = emptyBattery(~,y)
                 % emptyBattery() is an event that terminates the simulation
@@ -527,6 +601,11 @@ classdef QuadRotor < System
                 
                 sgtitle("Tracking Performance");
             end
+            function x = sqrtControl(x)
+                if abs(x) > 1
+                    x = sign(x)*(sqrt(abs(4*x)) - 1);
+                end
+            end
         end
         
         function [flight_time] = flightTime(obj, r, opts)
@@ -534,11 +613,13 @@ classdef QuadRotor < System
                 obj
                 r function_handle = (@(t) t>=0)
                 opts.InterpolateTime logical = false % This didn't help with the smoothness of the response at all.
-                opts.SimulationBased = false
+                opts.Timeout double = 5
+                opts.SimulationBased logical = false
+                opts.SimulationOpts cell = {}
             end
             
             if opts.SimulationBased
-                [t,~,x_g,errFlag] = Simulate(obj, r, 'Timeout', 5, 'PlotResults', false);
+                [t,~,x_g,errFlag] = Simulate(obj, r, 'Timeout', opts.Timeout, 'PlotResults', false, opts.SimulationOpts{:});
                 if errFlag
                     flight_time = NaN;
                 else
