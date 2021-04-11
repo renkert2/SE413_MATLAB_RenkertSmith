@@ -1,7 +1,8 @@
-*.mat
-*.png
 *.asv
+*.slxc
+*.prj
 
 **/ARCHIVE
+slprj/
 Literature/
 EXPORTS/
