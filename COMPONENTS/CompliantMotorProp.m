@@ -1,6 +1,6 @@
-classdef MotorPropeller < System
+classdef CompliantMotorProp < System
     methods
-        function obj = MotorPropeller(opts)
+        function obj = CompliantMotorProp(opts)
             arguments
                 opts.pmsmmotor = PMSMMotor('Name', "Motor");
                 opts.shaftcoupler = ShaftCoupler('Name', "Shaft");
