@@ -37,7 +37,7 @@ classdef MotorProp < System
             
             g = Graph(V, E);
             obj.Graph = g;
-            obj.Graph.Parent = obj;mp
+            obj.Graph.Parent = obj;
             
             % Ouptuts
             syms omega

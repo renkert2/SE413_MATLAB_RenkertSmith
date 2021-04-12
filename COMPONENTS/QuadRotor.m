@@ -9,7 +9,6 @@ classdef QuadRotor < System
     
     properties (SetAccess = private)
         SymVars SymVars
-        SymParams SymParams
         
         SimpleModel Model
         LinearDynamicModel LinearModel
@@ -35,25 +34,26 @@ classdef QuadRotor < System
                 p.DCBus DCBus_CurrentEquivalence = DCBus_CurrentEquivalence('Name', 'Bus', 'N_inputs',1,'N_outputs',4);
                 p.PMSMInverter PMSMInverter = PMSMInverter('Name', "Inverter");
                 p.PMSMMotor PMSMMotor = PMSMMotor('Name', "Motor");
-                p.ShaftCoupler ShaftCoupler = ShaftCoupler('Name', "Shaft");
                 p.Propeller Propeller = Propeller('Name', "Propeller");
             end
             
-            replicated_comps = Replicate([p.PMSMInverter, p.PMSMMotor, p.ShaftCoupler, p.Propeller], 4);
+            replicated_comps = Replicate([p.PMSMInverter, p.PMSMMotor, p.Propeller], 4);
             pmsminverters = replicated_comps{1};
             pmsmmotors = replicated_comps{2};
-            shaftcouplers = replicated_comps{3};
-            propellers = replicated_comps{4};
+            propellers = replicated_comps{3};
             
-            components = [p.Battery, p.DCBus, replicated_comps{:}];
+            motorprops = MotorProp.empty(4,0);
+            for i = 1:4
+                motorprops(i) = MotorProp('PMSMMotor', pmsmmotors(i), 'Propeller', propellers(i));
+            end
+            
+            components = [p.Battery, p.DCBus, pmsminverters, motorprops];
             
             ConnectP = {[p.Battery.Ports(1) p.DCBus.Ports(1)]};
             
             for i = 1:4
                 ConnectP{end+1,1} = [pmsminverters(i).Ports(1),p.DCBus.Ports(1+i)];
-                ConnectP{end+1,1} = [pmsminverters(i).Ports(2), pmsmmotors(i).Ports(1)];
-                ConnectP{end+1,1} = [pmsmmotors(i).Ports(2), shaftcouplers(i).Ports(1)];
-                ConnectP{end+1,1} = [shaftcouplers(i).Ports(2), propellers(i).Ports(1)];
+                ConnectP{end+1,1} = [pmsminverters(i).Ports(2), motorprops(i).Ports(1)];
             end
             
             obj = obj@System(components, ConnectP);
@@ -63,7 +63,11 @@ classdef QuadRotor < System
         
         function init_post(obj)
             createModel(obj);
-            obj.SymParams = obj.Graph.SymParams;
+            if ~isempty(obj.Graph.SymParams)
+                obj.SymParams = obj.Graph.SymParams;
+            else
+                obj.SymParams = SymParams();
+            end
             setSymQuantities(obj);
             setSimpleModel(obj);
             setLinearDynamicModel(obj);
@@ -88,7 +92,7 @@ classdef QuadRotor < System
             SQ = @(s) symQuantity(s,sp); % Wrapper function for brevity
             
             % Battery Capacity
-            batt = obj.Components(1);
+            batt = obj.getComponents('Battery');
             obj.BattCap = SQ(batt.Capacity); % A*s
             
             % Mass
@@ -100,8 +104,8 @@ classdef QuadRotor < System
             obj.HoverThrust = SQ(hover_thrust); % Total Thrust required to hover
             
             % Hover Speed
-            prop_i = find(arrayfun(@(x) isa(x,'Propeller'), obj.Components),1);
-            prop = obj.Components(prop_i);
+            mp = obj.getComponents('MotorProp');
+            prop = getComponents(mp(1), 'Propeller');
             hover_speed = prop.calcSpeed(hover_thrust/4);
             obj.HoverSpeed = SQ(hover_speed);
         end
@@ -114,10 +118,9 @@ classdef QuadRotor < System
             %1.         x1       "Battery"        "Battery SOC"           Abstract
             %2.         x2       "Motor"        "Inductance (i_q)"      Current
             %3.         x3       "Motor"        "Inertia (omega_m)"     AngularVelocity
-            %4.         x10      "Shaft"        "Torque (T)"            Torque
-            %5.         x14      "Propeller"    "Inertia (omega)"       AngularVelocity
-            states = [1,2,3,10,14];
-            simple_model.StateDescriptions = ["Battery SOC"; "Motor Current"; "Motor Velocity"; "Shaft Torque"; "Propeller Speed"];
+            
+            states = [1,2,3];
+            simple_model.StateDescriptions = ["Battery SOC"; "Motor Current"; "Rotor Speed"];
             simple_model.Nx = numel(states);
             
             % INPUTS
@@ -126,15 +129,17 @@ classdef QuadRotor < System
             
             
             % OUTPUTS:
-            %1-5.  States 1-5
-            %6.  Bus Voltage
-            %7.  Bus Current
-            %8.  Inverter Current (DC)
-            %9.  Inverter Voltage (Q)
-            %10.  Thrust - Total
-            outs = [states 18 19 20 21 28];
+            %1-3.  States 1-3
+            %4.  Bus Voltage
+            %5.  Bus Current
+            %6.  Inverter Current (DC)
+            %7.  Inverter Voltage (Q)
+            %8. Torque
+            %9. Thrust - Total
+  
+            outs = [states 10 11 12 13 21 20];
             simple_model.Ny = numel(outs);
-            simple_model.OutputDescriptions = [simple_model.StateDescriptions; "Bus Voltage"; "Bus Current"; "Inverter Current (DC)"; "Inverter Voltage (q)"; "Total Thrust"];
+            simple_model.OutputDescriptions = [simple_model.StateDescriptions; "Bus Voltage"; "Bus Current"; "Inverter Current (DC)"; "Inverter Voltage (q)"; "Torque"; "Total Thrust"];
             
             obj.SymVars = SymVars('Nx', simple_model.Nx, 'Nd', simple_model.Nd, 'Nu', simple_model.Nu);
             
@@ -163,7 +168,7 @@ classdef QuadRotor < System
             % Cut Battery Dynamics out of Dynamic Model
             x_mod = obj.SymVars.x(2:end);
             f_sym_mod = obj.SimpleModel.f_sym(2:end);
-            g_sym_mod = obj.SimpleModel.g_sym([5,end]);
+            g_sym_mod = obj.SimpleModel.g_sym([3,end]);
             
             A = jacobian(f_sym_mod, x_mod);
             B = jacobian(f_sym_mod, u_mod);
@@ -172,14 +177,14 @@ classdef QuadRotor < System
             D = jacobian(g_sym_mod, u_mod);
             
             lm = LinearModel();
-            lm.Nx = 4;
+            lm.Nx = 2;
             lm.Nu = 1;
             lm.Nd = 0;
-            lm.Ny = 1;
+            lm.Ny = 2;
             lm.StateDescriptions = obj.SimpleModel.StateDescriptions(2:end);
             lm.InputDescriptions = obj.SimpleModel.InputDescriptions;
-            lm.OutputDescriptions = obj.SimpleModel.OutputDescriptions([5,end]);
-            sp = copy(obj.SimpleModel.SymParams);
+            lm.OutputDescriptions = obj.SimpleModel.OutputDescriptions([3,end]);
+            sp = copy(obj.SymParams);
             sp.prepend(symParam('x1',1));
             lm.SymParams = sp;
             sv = obj.SimpleModel.SymVars;
@@ -201,8 +206,8 @@ classdef QuadRotor < System
         end
         
         function setSteadyStateFunc(obj)
-            solve_vars = [sym('u1'); sym('x2'); sym('x3'); sym('x4')];
-            subs_vars = [sym('x1'); sym('x5')];
+            solve_vars = [sym('u1'); sym('x2')];
+            subs_vars = [sym('x1'); sym('x3')];
             sp_vars = obj.SymParams.Syms;
             
             vars = {solve_vars, subs_vars, sp_vars};
@@ -211,9 +216,9 @@ classdef QuadRotor < System
         end
         
         function setSteadyStateIOFunc(obj)
-            solve_vars = [sym('x2'); sym('x3'); sym('x4'); sym('x5')];
+            solve_vars = [sym('x2'); sym('x3')];
             subs_vars = [sym('u1'); sym('x1')];
-            sp_vars = obj.SimpleModel.SymParams.Syms;
+            sp_vars = obj.SymParams.Syms;
             
             vars = {solve_vars, subs_vars, sp_vars};
             
@@ -231,14 +236,14 @@ classdef QuadRotor < System
             end
             
             if isempty(q_bar)
-                q_bar = obj.Components(1).Averaged_SOC;
+                q_bar =getComponents(obj,'Battery').Averaged_SOC;
             end
             
             sym_param_vals = obj.sym_param_vals;
             
             hover_speed = double(obj.HoverSpeed, sym_param_vals);
             
-            x0 = [0.5; 1; hover_speed; 0.01];
+            x0 = [0.5; 1];
             [x_sol, ~, exit_flag] = fsolve(@(x) obj.SteadyState_func(x,[q_bar;hover_speed],sym_param_vals), x0, opts.SolverOpts);
             if exit_flag <= 0
                 error('No solution found');
@@ -267,14 +272,14 @@ classdef QuadRotor < System
             end
             
             if isempty(q)
-                q = obj.Components(1).Averaged_SOC;
+                q = getComponents(obj,'Battery').Averaged_SOC;
             end
             
             sym_param_vals = obj.sym_param_vals;
             
             hover_speed = double(obj.HoverSpeed, sym_param_vals);
             
-            x0 = [1; hover_speed; 0.01; hover_speed];
+            x0 = [1; hover_speed];
             [x_sol, ~, exit_flag] = fsolve(@(x) obj.SteadyStateIO_func(x,[u;q],sym_param_vals), x0, opts.SolverOpts);
             if exit_flag <= 0
                 error('No solution found');
@@ -493,7 +498,7 @@ classdef QuadRotor < System
             T_bar = qrss.y(end);
             
             if opts.FeedForwardW
-                w_bar = qrss.y(5);
+                w_bar = qrss.y(3);
             else
                 w_bar = 0;
             end
@@ -548,7 +553,7 @@ classdef QuadRotor < System
                 dot_x_vc = f_vc(x_vc, u_vc);
                 y_vc = g_vc(x_vc, u_vc);
                 
-                u_sc = (y_vc - x_g(5)) + w_bar; % Propeller Speed error signal, essentially an acceleration command
+                u_sc = (y_vc - x_g(3)) + w_bar; % Propeller Speed error signal, essentially an acceleration command
                 dot_x_sc = f_sc(x_sc, u_sc);
                 y_sc = g_sc(x_sc, u_sc); % Output of PI Speed Controller is input to Graph (PowerTrain) Model
                 
@@ -613,7 +618,7 @@ classdef QuadRotor < System
                 obj
                 r function_handle = (@(t) t>=0)
                 opts.InterpolateTime logical = false % This didn't help with the smoothness of the response at all.
-                opts.Timeout double = 5
+                opts.Timeout double = 30
                 opts.SimulationBased logical = false
                 opts.SimulationOpts cell = {}
             end
@@ -634,7 +639,7 @@ classdef QuadRotor < System
                 end
             else
                 cap = double(obj.BattCap,obj.sym_param_vals); % A*s
-                ave_current = obj.SS_QAve.y(7);
+                ave_current = obj.SS_QAve.y(5);
                 flight_time = cap/ave_current;
             end    
         end
@@ -658,18 +663,15 @@ classdef QuadRotor < System
                 from{2} = [sym('x4'), sym('x6'), sym('x8')];
                 to{2} = repmat(sym('x2'),1,3);
                 
-                from{3} = [sym('x11'), sym('x12'), sym('x13')];
-                to{3} = repmat(sym('x10'),1,3);
-                
-                from{4} = [sym('x15'), sym('x16'), sym('x17')];
-                to{4} = repmat(sym('x14'),1,3);
+                from{3} = [sym('x5'), sym('x7'), sym('x9')];
+                to{3} = repmat(sym('x3'),1,3);
             end
             
             sym_bal = subs(sym_unbal,[from{:}], [to{:}]);
         end
         
         function sym_out = convertStates(obj, sym_in)
-            from = [sym('x1'); sym('x2'); sym('x3'); sym('x10'); sym('x14')];
+            from = [sym('x1'); sym('x2'); sym('x3')];
             to = obj.SymVars.x;
             sym_out = subs(sym_in, from,to);
         end

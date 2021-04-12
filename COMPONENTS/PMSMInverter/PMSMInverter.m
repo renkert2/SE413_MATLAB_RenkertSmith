@@ -9,8 +9,8 @@ classdef PMSMInverter < Component
         
         L {mustBeParam} = 0;
         C {mustBeParam} = 0;
-        R_1 {mustBeParam} = 0.0;
-        R_2 {mustBeParam} = 1.5;
+        R_1 {mustBeParam} = 0.01;
+        R_2 {mustBeParam} = 0.0;
     end
     
     methods
