@@ -328,13 +328,14 @@ classdef QuadRotor < System
             
             if isempty(u)
                 y = obj.SS_QAve.y;
+                u = obj.SS_QAve.u;
             else
                 [~,~,y] = obj.calcSteadyStateIO(u,q);
             end
 
-            bus_power = y(6).*y(7); % bus voltage (DC) * bus current (DC)
-            inv_power = 4*y(9).*y(2); % inverter voltage (q) * motor_current (q)
-            motor_power = 4*y(3).*y(4);
+            bus_power = y(4).*y(5); % bus voltage (DC) * bus current (DC)
+            inv_power = y(6).*y(2); % inverter voltage (q) * motor_current (q)
+            motor_power = y(8).*y(3);
             
             inv_eta = inv_power ./ bus_power;
             motor_eta = motor_power ./ inv_power;
