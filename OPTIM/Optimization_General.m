@@ -82,7 +82,7 @@ classdef Optimization_General < handle
             end
             optimopts = optimoptions(optimopts, opts.OptimizationOpts{:});
 
-            [X_opt, fval, ~, output] = fmincon(@(X) -obj.flightTime(XAll(obj.OptiVars,X),r,'SimulationBased', opts.SimulationBased, opts.FlightTimeOpts{:}),X0(obj.OptiVars), [], [], [], [], LB(obj.OptiVars), UB(obj.OptiVars), @(x) nlcon(obj,XAll(obj.OptiVars,x)), optimopts);
+            [X_opt, fval, ~, output] = fmincon(@(X) -obj.flightTime(XAll(obj.OptiVars,X),r,'SimulationBased', opts.SimulationBased, opts.FlightTimeOpts{:}),X0(obj.OptiVars), [], [], [], [], LB(obj.OptiVars), UB(obj.OptiVars), @(x) nlcon(XAll(obj.OptiVars,x)), optimopts);
             opt_flight_time = -fval;
             
             % Ensure the QuadRotor gets updated to the correct sym param vals
@@ -90,13 +90,14 @@ classdef Optimization_General < handle
             
             % Set Optimal Values in OptiVars
             setOptVals(obj.OptiVars, X_opt);
-        end
+            
+            function [c,ceq] = nlcon(x)
+                c_1 = distToBoundary(obj.propAeroFit.Boundary, x(find(obj.OptiVars, ["D", "P"])));
+                c_2 = distToBoundary(obj.motorFit.Boundary, x(find(obj.OptiVars, ["kV", "Rm"])));
+                c = [c_1;c_2];
+                ceq = [];
+            end
         
-        function [c,ceq] = nlcon(obj,x)
-            c_1 = distToBoundary(obj.propAeroFit.Boundary, x(find(obj.OptiVars, ["D", "P"])));
-            c_2 = distToBoundary(obj.motorFit.Boundary, x(find(obj.OptiVars, ["kV", "Rm"])));
-            c = [c_1;c_2];
-            ceq = [];
         end
         
         function ft = flightTime(obj,X,r,opts)

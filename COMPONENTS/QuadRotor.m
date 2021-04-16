@@ -19,8 +19,10 @@ classdef QuadRotor < System
         HoverThrust symQuantity % Thrust required to hover
         HoverSpeed symQuantity  % Speed required to hover
 
+        % Properties Dependent on SymParamVals
         sym_param_vals double
         SS_QAve QRSteadyState % Steady State at average battery voltage
+        flight_time double
     end
     
     properties (Hidden)
@@ -59,6 +61,8 @@ classdef QuadRotor < System
             
             obj = obj@System(components, ConnectP);
             obj.extrinsicProps = Combine([obj.extrinsicProps,obj.StandardEmptyWeight]);
+            
+            warning('off', 'Control:combination:connect10') % Annoying message from calcControllerGains
             init_post(obj);
         end
         
@@ -81,10 +85,16 @@ classdef QuadRotor < System
         function updateSymParamVals(obj, sym_param_vals)
             if nargin == 2
                 assert(numel(sym_param_vals) == obj.SymParams.N, 'Incorrect number of sym param vals');
-                obj.sym_param_vals = sym_param_vals;
+                new_vals = sym_param_vals;
             else
-                obj.sym_param_vals = obj.SymParams.Vals;
+                new_vals = obj.SymParams.Vals;
             end
+            
+            if new_vals ~= obj.sym_param_vals
+                obj.sym_param_vals = new_vals;
+                obj.flight_time = []; % Reset flight time prediction
+            end
+                 
             obj.SS_QAve = calcSteadyState(obj);
         end
         
@@ -654,9 +664,14 @@ classdef QuadRotor < System
                 cap = double(obj.BattCap,obj.sym_param_vals); % A*s
                 ave_current = obj.SS_QAve.y(5);
                 flight_time = cap/ave_current;
-            end    
+            end
+            
+            obj.flight_time = flight_time;
         end
-        %% Helper Functions
+    end
+    
+    %% Helper Functions
+    methods (Access = private)
         function syms_out = convertSyms(obj, syms_in)
             syms_out = convertToBalanced(obj,syms_in);
             syms_out = convertStates(obj,syms_out);
