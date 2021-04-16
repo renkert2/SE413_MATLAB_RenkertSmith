@@ -21,6 +21,7 @@ classdef Battery < Component
     properties (Dependent)
         Energy % Joules
         Capacity % Coulombs = 1 A*s
+        V_OCV_pack
     end
     
     properties (SetAccess = private)
@@ -37,6 +38,10 @@ classdef Battery < Component
         
         function C = get.Capacity(obj)
             C = obj.Q*obj.N_p;
+        end
+        
+        function V = get.V_OCV_pack(obj)
+           V = obj.N_s*obj.V_OCV_nominal*obj.V_OCV_curve;
         end
         
         function setV_OCV_curve(obj,arg)
@@ -74,6 +79,7 @@ classdef Battery < Component
                 obj.Averaged_SOC = 1; % SOC at which V_OCV(q) = V_OCV_Average
                 obj.Nominal_SOC = 1;
             end
+            
         end
         
         function DefineComponent(obj)

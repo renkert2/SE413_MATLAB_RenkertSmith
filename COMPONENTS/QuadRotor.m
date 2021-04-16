@@ -14,6 +14,7 @@ classdef QuadRotor < System
         LinearDynamicModel LinearModel
         
         BattCap symQuantity
+        V_OCV_pack symQuantity % Open circuit voltage of the battery pack; function of Q. 
         Mass symQuantity
         HoverThrust symQuantity % Thrust required to hover
         HoverSpeed symQuantity  % Speed required to hover
@@ -94,6 +95,9 @@ classdef QuadRotor < System
             % Battery Capacity
             batt = obj.getComponents('Battery');
             obj.BattCap = SQ(batt.Capacity); % A*s
+            
+            % Battery Pack V_OCV
+            obj.V_OCV_pack = symQuantity(batt.V_OCV_pack, sp, {sym('q')});
             
             % Mass
             mass = getProp(obj.extrinsicProps, 'Mass');
@@ -332,22 +336,30 @@ classdef QuadRotor < System
             else
                 [~,~,y] = obj.calcSteadyStateIO(u,q);
             end
-
-            bus_power = y(4).*y(5); % bus voltage (DC) * bus current (DC)
-            inv_power = y(6).*y(2); % inverter voltage (q) * motor_current (q)
-            motor_power = y(8).*y(3);
             
+            if isempty(q)
+                q = obj.SS_QAve.q;
+            end
+            
+            batt_power = double(obj.V_OCV_pack,obj.sym_param_vals,q)*y(5);
+            bus_power = y(4).*y(5); % bus voltage (DC) * bus current (DC)
+            inv_power = y(7).*y(2)*4; % inverter voltage (q) * motor_current (q)
+            motor_power = y(8).*y(3)*4;
+            
+            batt_eta = bus_power ./ batt_power;
             inv_eta = inv_power ./ bus_power;
             motor_eta = motor_power ./ inv_power;
             
-            sys_eta= inv_eta*motor_eta;
+            sys_eta= batt_eta*inv_eta*motor_eta;
             
             eta = struct();
+            eta.Battery = batt_eta;
             eta.Inverter = inv_eta;
             eta.Motor = motor_eta;
             eta.Sys = sys_eta;
             
             P = struct();
+            P.Battery = batt_power;
             P.Bus = bus_power;
             P.Inverter = inv_power;
             P.Motor = motor_power;

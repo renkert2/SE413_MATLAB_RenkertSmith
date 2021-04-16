@@ -1,5 +1,4 @@
 classdef PMSMInverter < Component
-    
     properties
         InverterType InverterTypes = InverterTypes.VoltageDependent
         
@@ -10,7 +9,7 @@ classdef PMSMInverter < Component
         L {mustBeParam} = 0;
         C {mustBeParam} = 0;
         R_1 {mustBeParam} = 0.01;
-        R_2 {mustBeParam} = 0.0;
+        R_2 {mustBeParam} = 0;
     end
     
     methods
@@ -31,8 +30,6 @@ classdef PMSMInverter < Component
             P(1) = Type_PowerFlow("xt*xh");
             P(2) = Type_PowerFlow("u1*xt*xh");
             P(3) = Type_PowerFlow("xt^2");
-            
-            % Vertices
 
             % Internal Vertices
             desc = ["DC Inductance", "q Capacitance"];
@@ -56,9 +53,9 @@ classdef PMSMInverter < Component
             I(1) = GraphInput("d");
             
             % Edges
-            E(1) = GraphEdge_Internal('PowerFlow',P(2),'Coefficient',sqrt(3/2),'TailVertex',V(3),'HeadVertex',V(1), 'Input', I(1));
-            E(2) = GraphEdge_Internal('PowerFlow',P(1),'Coefficient',1,'TailVertex',V(1),'HeadVertex',V(2));
-            E(3) = GraphEdge_Internal('PowerFlow',P(2),'Coefficient',sqrt(3/2),'TailVertex',V(2),'HeadVertex',V(4), 'Input', I(1));
+            E(1) = GraphEdge_Internal('PowerFlow',P(2),'Coefficient',1,'TailVertex',V(3),'HeadVertex',V(1), 'Input', I(1));
+            E(2) = GraphEdge_Internal('PowerFlow',P(1),'Coefficient',sqrt(2/3),'TailVertex',V(1),'HeadVertex',V(2));
+            E(3) = GraphEdge_Internal('PowerFlow',P(1),'Coefficient',1,'TailVertex',V(2),'HeadVertex',V(4));
             
             if obj.InverterType == InverterTypes.ConstantLoss
                 P(4) = Type_PowerFlow("xt");
@@ -72,7 +69,6 @@ classdef PMSMInverter < Component
             else
                 error('Invalid InverterType')
             end
-            
             
             g = Graph(V, E);
             obj.Graph = g;
