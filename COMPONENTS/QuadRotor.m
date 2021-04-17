@@ -26,6 +26,15 @@ classdef QuadRotor < System
         flight_time double % Expensive calculation is cached 
     end
     
+    % Easier Access to Components
+    properties (SetAccess = private)
+        Battery Battery
+        DCBus DCBus_CurrentEquivalence
+        Inverter PMSMInverter
+        Motor PMSMMotor
+        Propeller Propeller
+    end
+    
     properties (Dependent)
         PerformanceData PerformanceData
         DesignData DesignData
@@ -56,6 +65,11 @@ classdef QuadRotor < System
                 motorprops(i) = MotorProp('PMSMMotor', pmsmmotors(i), 'Propeller', propellers(i));
             end
             
+            % I would love for this to work at some point.
+            % motorprop = MotorProp('PMSMMotor', p.PMSMMotor, 'Propeller', p.Propeller);
+            % pmsminverters = repmat(p.PMSMInverter, 1, 4);
+            % motorprops = repmat(motorprop, 1, 4);
+            
             components = [p.Battery, p.DCBus, pmsminverters, motorprops];
             
             ConnectP = {[p.Battery.Ports(1) p.DCBus.Ports(1)]};
@@ -66,6 +80,12 @@ classdef QuadRotor < System
             end
             
             obj = obj@System(components, ConnectP);
+            obj.Battery = p.Battery;
+            obj.DCBus = p.DCBus;
+            obj.Inverter = p.PMSMInverter;
+            obj.Motor = p.PMSMMotor;
+            obj.Propeller = p.Propeller;
+            
             obj.extrinsicProps = Combine([obj.extrinsicProps,obj.StandardEmptyWeight]);
             
             warning('off', 'Control:combination:connect10') % Annoying message from calcControllerGains
@@ -664,6 +684,10 @@ classdef QuadRotor < System
         end
         
         function pd = get.PerformanceData(obj)
+            pd = PerformanceData();
+            pd.FlightTime = obj.flight_time;
+            pd.ThrustRatio = calcThrustRatio(obj);
+            pd.SteadyState = obj.SS_QAve;
         end
         
         function dd = get.DesignData(obj)
