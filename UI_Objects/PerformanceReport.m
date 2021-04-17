@@ -1,9 +1,9 @@
-classdef DesignReport < matlab.ui.componentcontainer.ComponentContainer
+classdef PerformanceReport < matlab.ui.componentcontainer.ComponentContainer
     %DESIGNREPORT Summary of this class goes here
     %   Detailed explanation goes here
     
     properties
-        QR QuadRotor
+        PD PerformanceData
     end
     
     properties (Access = private)
@@ -12,9 +12,9 @@ classdef DesignReport < matlab.ui.componentcontainer.ComponentContainer
     end
       
     methods
-        function obj = DesignReport(QR,parent,varargin)
+        function obj = PerformanceReport(PD,parent,varargin)
             arguments
-                QR QuadRotor
+                PD PerformanceData
                 parent = []
             end
             arguments (Repeating)
@@ -28,18 +28,16 @@ classdef DesignReport < matlab.ui.componentcontainer.ComponentContainer
                 parent.ColumnWidth = ["1x"];
             end
             
-            obj = obj@matlab.ui.componentcontainer.ComponentContainer(parent,'QR', QR, varargin{:});
+            obj = obj@matlab.ui.componentcontainer.ComponentContainer(parent,'PD', PD, varargin{:});
         end
         
         function updatePublic(obj)
             % Flight Time
-            ft = obj.QR.flight_time;
-            if isempty(ft)
-                ft = obj.QR.flightTime();
-            end
+            ft = obj.PD.FlightTime;
             obj.ft.Value = ft;
+            
             % Efficiency
-            eta_struct = calcEfficiency(obj.QR);
+            eta_struct = PD.Efficiency;
             obj.eta(1).Value = eta_struct.Battery;
             obj.eta(2).Value = eta_struct.Inverter;
             obj.eta(3).Value = eta_struct.Motor;

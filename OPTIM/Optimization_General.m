@@ -9,11 +9,6 @@ classdef Optimization_General < handle
         OptiVars (:,1) optiVar
     end
     
-    properties (SetAccess = private)
-        X_opt_static
-        X_opt_dynamic
-    end
-    
     methods
         function obj = Optimization_General()
             obj.init();

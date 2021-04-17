@@ -13,6 +13,7 @@ classdef QuadRotor < System
         SimpleModel Model
         LinearDynamicModel LinearModel
         
+        % Can make this a list of symQuantities if necessary.
         BattCap symQuantity
         V_OCV_pack symQuantity % Open circuit voltage of the battery pack; function of Q. 
         Mass symQuantity
@@ -21,8 +22,13 @@ classdef QuadRotor < System
 
         % Properties Dependent on SymParamVals
         sym_param_vals double
-        SS_QAve QRSteadyState % Steady State at average battery voltage
-        flight_time double
+        SS_QAve QRState % Steady State at average battery voltage
+        flight_time double % Expensive calculation is cached 
+    end
+    
+    properties (Dependent)
+        PerformanceData PerformanceData
+        DesignData DesignData
     end
     
     properties (Hidden)
@@ -250,7 +256,7 @@ classdef QuadRotor < System
             end
             
             if isempty(q_bar)
-                q_bar =getComponents(obj,'Battery').Averaged_SOC;
+                q_bar = getComponents(obj,'Battery').Averaged_SOC;
             end
             
             sym_param_vals = obj.sym_param_vals;
@@ -267,14 +273,15 @@ classdef QuadRotor < System
                 error('No valid solution.  Required input must be positive');
             end
             
-            qrss = QRSteadyState();
+            qrss = QRState();
             qrss.q = q_bar;
             qrss.x = [q_bar; x_sol(2:end); hover_speed];
             qrss.u = x_sol(1);
             qrss.y = obj.SimpleModel.CalcG(qrss.x, qrss.u, [], sym_param_vals);
+            qrss.BatteryOCV = double(obj.V_OCV_pack,sym_param_vals,q_bar);
         end
         
-        function [T,x_sol,y_sol] = calcSteadyStateIO(obj,u,q, opts)
+        function qrss = calcSteadyStateIO(obj, u, q, opts)
             % Calculates steady-state thrust given input u, battery SOC q
             % Default value for q is average battery soc
             
@@ -291,7 +298,7 @@ classdef QuadRotor < System
             
             sym_param_vals = obj.sym_param_vals;
             
-            hover_speed = double(obj.HoverSpeed, sym_param_vals);
+            hover_speed = double(obj.HoverSpeed, sym_param_vals); % Just used for initialization.
             
             x0 = [1; hover_speed];
             [x_sol, ~, exit_flag] = fsolve(@(x) obj.SteadyStateIO_func(x,[u;q],sym_param_vals), x0, opts.SolverOpts);
@@ -303,6 +310,13 @@ classdef QuadRotor < System
             u_sol = u;
             y_sol = obj.SimpleModel.CalcG(x_sol, u_sol, [], sym_param_vals);
             T = y_sol(end);
+            
+            qrss = QRState();
+            qrss.q = q;
+            qrss.x = x_sol;
+            qrss.u = u_sol;
+            qrss.y = y_sol;
+            qrss.BatteryOCV = double(obj.V_OCV_pack,sym_param_vals,q);
         end
         
         function u_bar_func = calcSteadyStateInputFunc(obj, opts)
@@ -324,55 +338,11 @@ classdef QuadRotor < System
         end
         
         function tr = calcThrustRatio(obj)
-            T_max = calcSteadyStateIO(obj, 1);
+            qrsio = calcSteadyStateIO(obj, 1);
+            T_max = qrsio.TotalThrust;
             T_hover = double(obj.HoverThrust, obj.sym_param_vals);
             
             tr = T_max / T_hover;
-        end
-        
-        function [eta,P] = calcEfficiency(obj,u,q)
-            % Define x_power as the power output from that component
-            % input_power is chemical power from battery
-            
-            arguments
-                obj
-                u double = []
-                q double = []
-            end
-            
-            if isempty(u)
-                y = obj.SS_QAve.y;
-                u = obj.SS_QAve.u;
-            else
-                [~,~,y] = obj.calcSteadyStateIO(u,q);
-            end
-            
-            if isempty(q)
-                q = obj.SS_QAve.q;
-            end
-            
-            batt_power = double(obj.V_OCV_pack,obj.sym_param_vals,q)*y(5);
-            bus_power = y(4).*y(5); % bus voltage (DC) * bus current (DC)
-            inv_power = y(7).*y(2)*4; % inverter voltage (q) * motor_current (q)
-            motor_power = y(8).*y(3)*4;
-            
-            batt_eta = bus_power ./ batt_power;
-            inv_eta = inv_power ./ bus_power;
-            motor_eta = motor_power ./ inv_power;
-            
-            sys_eta= batt_eta*inv_eta*motor_eta;
-            
-            eta = struct();
-            eta.Battery = batt_eta;
-            eta.Inverter = inv_eta;
-            eta.Motor = motor_eta;
-            eta.Sys = sys_eta;
-            
-            P = struct();
-            P.Battery = batt_power;
-            P.Bus = bus_power;
-            P.Inverter = inv_power;
-            P.Motor = motor_power;
         end
         
         function [A,B,C,D] = calcLinearMatrices(obj, qrss)
@@ -446,7 +416,7 @@ classdef QuadRotor < System
             obj.K_P_height = K_P_height;
         end
         
-        function [t_out, y_out, x_g_out, errFlag] = Simulate(obj, r, opts)
+        function [t_out, y_out, errFlag, state_out] = Simulate(obj, r, opts)
             arguments
                 obj
                 r function_handle = (@(t) t>=0)
@@ -518,10 +488,10 @@ classdef QuadRotor < System
             g_r_1 = @(x_r) 1/tau.*x_r;
             
             % Nominal Thrust
-            T_bar = qrss.y(end);
+            T_bar = qrss.TotalThrust;
             
             if opts.FeedForwardW
-                w_bar = qrss.y(3);
+                w_bar = qrss.RotorSpeed;
             else
                 w_bar = 0;
             end
@@ -544,18 +514,37 @@ classdef QuadRotor < System
             tic
             [t_out,x_out] = ode23tb(@(t,x) f_sys_cl(t,x), [0 opts.MaxSimTime], x_0, sim_opts);
             
-            % Process Results
-            x_g_out = x_out(:,i_x_g);
+            % Process Minimal Results
             x_b_out = x_out(:,i_x_b);
-            x_r_out = x_out(:,i_x_r);
-            
             y_out = x_b_out(:,1);
+            
+            if nargout > 3 || opts.PlotResults
+                % Process additional results
+                x_g_out = x_out(:,i_x_g);
+                x_r_out = x_out(:,i_x_r);                
+                
+                % Calculate the input and model outputs at each time
+                u_g = zeros(obj.SimpleModel.Nu, numel(t_out));
+                y_state = zeros(obj.SimpleModel.Ny, numel(t_out));
+                
+                for i = 1:numel(t_out)
+                    [~,u_g(:,i)] = f_sys_cl(t_out(i), x_out(i,:)');
+                    y_state(:,i) = obj.SimpleModel.CalcG(x_g_out(i,:)', u_g(:,i), [], sym_param_vals);
+                end
+
+                state_out = QRState();
+                state_out.x = x_g_out';
+                state_out.u =  u_g;
+                state_out.y = y_state;
+                q = state_out.BatterySOC;
+                state_out.BatteryOCV = arrayfun(@(x) double(obj.V_OCV_pack,sym_param_vals,x), q);
+            end
             
             if opts.PlotResults
                 plotResults()
             end
             
-            function x_dot = f_sys_cl(t,x)
+            function [x_dot, u_g] = f_sys_cl(t,x)
                 x_g = x(i_x_g);
                 x_b = x(i_x_b);
                 x_sc = x(i_x_sc);
@@ -591,6 +580,7 @@ classdef QuadRotor < System
                 
                 x_dot = [dot_x_g; dot_x_b; dot_x_sc; dot_x_vc; dot_x_r];
             end
+            
             function [value, isterminal, direction] = emptyBattery(~,y)
                 % emptyBattery() is an event that terminates the simulation
                 % when the battery SOC drains to zero.
@@ -598,7 +588,10 @@ classdef QuadRotor < System
                 isterminal = 1;
                 direction = 0;
             end
+            
             function status = odeFunc(~,~,flag)
+                % Output function that stops the simulation if it takes too long.
+                % Could also use this for fun visualizations :)
                 status = 0;
                 if isempty(flag)
                     timer = opts.Timeout - toc;
@@ -609,11 +602,12 @@ classdef QuadRotor < System
                     end
                 end
             end
+            
             function plotResults()
                 f = figure;
                 f.Position = [207.4000 311.4000 1.1016e+03 384.8000];
                 subplot(1,2,1)
-                plot(t_out, [r(t_out), g_r_1(x_r_out),y_out]);
+                plot(t_out, [r(t_out), g_r_1(x_r_out), y_out]);
                 xlim([0 25])
                 lg = legend(["Reference", "Filtered Reference", "Response"]);
                 lg.Location = 'southeast';
@@ -667,6 +661,12 @@ classdef QuadRotor < System
             end
             
             obj.flight_time = flight_time;
+        end
+        
+        function pd = get.PerformanceData(obj)
+        end
+        
+        function dd = get.DesignData(obj)
         end
     end
     
