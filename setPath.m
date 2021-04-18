@@ -3,3 +3,4 @@ addpath(genpath('EXPORTS'));
 addpath(genpath('STUDIES'));
 addpath(genpath('TESTS'));
 addpath(genpath('SUPPORT_FUNCTIONS'));
+addpath(genpath('OPTIM'));

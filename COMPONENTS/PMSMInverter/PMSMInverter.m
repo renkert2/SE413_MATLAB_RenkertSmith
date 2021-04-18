@@ -18,10 +18,13 @@ classdef PMSMInverter < Component
         end
     end
     
-    methods (Access = protected)
+    methods
         function init(obj)
             obj.setResistance();
         end
+    end
+    
+    methods (Access = protected)
         function DefineComponent(obj)
             % Capacitance Types
             C(1) = Type_Capacitance("x");

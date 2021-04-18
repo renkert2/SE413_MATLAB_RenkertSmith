@@ -65,7 +65,7 @@ classdef Battery < Component
         end
     end
     
-    methods (Access = protected)
+    methods
         function init(obj)
             if obj.variableV_OCV
                 if isequal(obj.V_OCV_curve, symfun(1, sym('q')))
@@ -80,8 +80,13 @@ classdef Battery < Component
                 obj.Nominal_SOC = 1;
             end
             
+            mp = extrinsicProp("Mass", obj.Energy*obj.specificEnergy);
+            mp.Parent = obj;
+            obj.Params(end+1,1) = mp;
         end
-        
+    end
+    
+    methods (Access = protected)
         function DefineComponent(obj)
             % Capacitance Types
             C(1) = Type_Capacitance(obj.V_OCV_curve(sym('x'))); % Capacitance Type for Q*V_OCV
@@ -108,9 +113,6 @@ classdef Battery < Component
             % Ports
             p(1) = ComponentPort('Description','Load Current','Element', Vertex(2));
             obj.Ports = p;
-            
-            % extrinsicProps
-            obj.extrinsicProps = extrinsicProp("Mass", obj.Energy*obj.specificEnergy);
         end
     end
      

@@ -3,7 +3,7 @@ classdef Propeller < Component
     %   Detailed explanation goes here
     
     properties
-        M {mustBeParam} = 0.008;
+        M {mustBeParam} = extrinsicProp('Mass', 0.008);
         J {mustBeParam} = 2.1075e-05 % Rotational Inertia - kg*m^2 from "Stabilization and Control of Unmanned Quadcopter (Jiinec)
         % k_Q and k_T Parameters from: 
         % Illinois Volume 2 Data
@@ -88,7 +88,7 @@ classdef Propeller < Component
             % Vertices
             V(1) = GraphVertex_Internal('Description', "Inertia (omega)",...
                 'Capacitance', C(1),...
-                'Coefficient', obj.J,...
+                'Coefficient', 1*obj.J,...
                 'VertexType', 'AngularVelocity');
             
             V(2) = GraphVertex_External('Description', "Input Torque (T_m)",'VertexType','Torque');
@@ -123,9 +123,6 @@ classdef Propeller < Component
             % Ports
             p(1) = ComponentPort('Description',"Torque Input",'Element',E(1));
             obj.Ports = p;
-            
-            % Extrinsic Props
-             obj.extrinsicProps = extrinsicProp("Mass", obj.M);
         end
     end
 end
