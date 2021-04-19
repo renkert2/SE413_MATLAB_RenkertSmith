@@ -98,25 +98,10 @@ classdef QuadRotor < System
             update(obj);
             calcControllerGains(obj);
         end
-        
-%        function updateSymParamVals(obj) %sym_param_vals)
-%             if nargin == 2
-%                 assert(numel(sym_param_vals) == obj.SymParams.N, 'Incorrect number of sym param vals');
-%                 new_vals = sym_param_vals;
-%             else
-%                 new_vals = obj.SymParams.Vals;
-%             end
-%             
-%             if new_vals ~= obj.sym_param_vals
-%                 obj.sym_param_vals = new_vals;
-%                 obj.flight_time = []; % Reset flight time prediction
-%             end
-%                  
-%             obj.SS_QAve = calcSteadyState(obj);
-%         end
 
         function update(obj)
             obj.SS_QAve = calcSteadyState(obj);
+            obj.flight_time = [];
         end
         
         function setParamQuantities(obj)
