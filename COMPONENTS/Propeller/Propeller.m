@@ -15,6 +15,7 @@ classdef Propeller < Component
         k_P {mustBeParam} = 0.0411 % Power coefficient - k_P = 2*pi*k_Q, speed in rev/s
         k_T {mustBeParam} = 0.0819 % Thrust coefficient - N/(s^2*kg*m^2), speed in rev/s.
         D {mustBeParam} = 0.1780 % Propeller Diameter - m
+        P {mustBeParam} =  0.0673 % Propeller Pitch - m
         
         rho {mustBeParam} = 1.205 % Air Density - kg/m^3
     end

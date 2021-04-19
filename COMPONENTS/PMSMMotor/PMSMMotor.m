@@ -7,11 +7,12 @@ classdef PMSMMotor < Component
         J {mustBeParam} = 6.5e-6 % Mechanical rotational inertia - Modified to better reflect Ferry's simulation results
         K_t {mustBeParam} = 0.00255 % Torque/Speed Coefficient - Nm/A = Vs/rad
         Rm {mustBeParam} = 0.117 % Phase Resistance - Ohms
-        B_v {mustBeParam} = 2.415e-6 % Viscous Friction - N*m*s
+        B_v {mustBeParam} = 0 % Viscous Friction - N*m*s
         T_c {mustBeParam} = 0 % Coulomb Friction
         sigmoid_a_param {mustBeParam} = 10 % Parameter used to approximate sign function with sigmoid function sig(w) = 2/(1+Exp(-a*w))-1
         
         M {mustBeParam} = extrinsicProp('Mass', 0.04);
+        D {mustBeParam} = 0.05
     end
     
     methods (Static)
@@ -19,6 +20,20 @@ classdef PMSMMotor < Component
             % P - Total number of poles - not pole pairs
             % lambda_m - Magnetic Flux Linkage
             K_t = (P/2)*lambda_m;
+        end
+        
+        function K_t = kVToKt(kV)
+            % Convert kV in rpm/V to torque constant Kt in N*m/A = V/(rad/s)
+            kV_radps = kV*(2*pi)/60;
+            K_t = 1/kV_radps;
+        end
+        
+        function J = calcInertia(M,D)
+            % Estimate mass of rotor as M/2;
+            % R = D/2;
+            % J = MR^2 (Hoop moment of inertia)
+            
+            J = (M/2).*(D/2).^2;
         end
     end
     

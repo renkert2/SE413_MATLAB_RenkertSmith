@@ -19,16 +19,18 @@ classdef Optimization_General < handle
                 'N_p', compParam('N_p',1,'AutoRename', true, 'Tunable', true),...
                 'N_s', compParam('N_s',3, 'AutoRename', true, 'Tunable', true)); % 4000mAh, 3S Default Battery, No Dynamics
             prop = Propeller('Name', 'Propeller',...
-                'k_P', compParam('k_P', 0.03, 'AutoRename', true, 'Tunable', true),...
-                'k_T', compParam('k_T', 0.05, 'AutoRename', true, 'Tunable', true),...
-                'D', compParam('D', 0.1270, 'AutoRename', true, 'Tunable', true),...
-                'M', extrinsicProp('Mass', 0.008, 'AutoRename',true,'Tunable',true),...
-                'J', compParam('J', 2.1075e-05, 'AutoRename', true, 'Tunable',true));
+                'k_P', compParam('k_P',  0.0411, 'AutoRename', true, 'Tunable', true),...
+                'k_T', compParam('k_T', 0.0819, 'AutoRename', true, 'Tunable', true),...
+                'D', compParam('D', 0.1780, 'AutoRename', true, 'Tunable', true, 'Unit', "m"),...
+                'P', compParam('P', 0.0673, 'AutoRename', true, 'Tunable', true, 'Unit', "m"),...
+                'M', extrinsicProp('Mass', 0.008, 'AutoRename',true,'Tunable',true, 'Unit', "kg"),...
+                'J', compParam('J', 2.1075e-05, 'AutoRename', true, 'Tunable',true, 'Unit', "kg*m^2"));
             motor = PMSMMotor('Name','Motor',...
-                'M', extrinsicProp('Mass',0.04, 'AutoRename', true, 'Tunable', true),...
-                'J', compParam('J', 6.5e-6, 'AutoRename', true, 'Tunable', true),...
-                'K_t', compParam('K_t', 0.00255, 'AutoRename', true, 'Tunable', true),...
-                'Rm', compParam('Rm',0.117, 'AutoRename', true, 'Tunable', true));
+                'M', extrinsicProp('Mass',0.04, 'AutoRename', true, 'Tunable', true, 'Unit', "kg"),...
+                'J', compParam('J', 6.5e-6, 'AutoRename', true, 'Tunable', true, 'Unit', "kg*m^2"),...
+                'D', compParam('D', 0.05, 'AutoRename', true, 'Tunable', true, 'Unit', "m"),...
+                'K_t', compParam('K_t', 0.00255, 'AutoRename', true, 'Tunable', true, 'Unit', "N*m/A"),...
+                'Rm', compParam('Rm',0.117, 'AutoRename', true, 'Tunable', true, 'Unit', "Ohm"));
             obj.quad_rotor = QuadRotor('Battery', batt, 'Propeller', prop, 'PMSMMotor', motor);
             
             load PF_Aero.mat PF_Aero
@@ -88,14 +90,19 @@ classdef Optimization_General < handle
             end
             optimopts = optimoptions(optimopts, opts.OptimizationOpts{:});
 
-            [X_opt, fval, ~, output] = fmincon(@(X) -obj.flightTime(XAll(obj.OptiVars,X),r,'SimulationBased', opts.SimulationBased, opts.FlightTimeOpts{:}),X0(obj.OptiVars), [], [], [], [], LB(obj.OptiVars), UB(obj.OptiVars), @(x) nlcon(XAll(obj.OptiVars,x)), optimopts);
+            [X_opt_s, fval, ~, output] = fmincon(@(X_s) -obj.flightTime(XAll(obj.OptiVars,X_s),r,'SimulationBased', opts.SimulationBased, opts.FlightTimeOpts{:}),X0(obj.OptiVars), [], [], [], [], LB(obj.OptiVars), UB(obj.OptiVars), @(x) nlcon(XAll(obj.OptiVars,x)), optimopts);
             opt_flight_time = -fval;
             
-            % Ensure the QuadRotor gets updated to the correct sym param vals
-            obj.updateParamVals(XAll(obj.OptiVars,X_opt));
-            
             % Set Optimal Values in OptiVars
-            setOptVals(obj.OptiVars, X_opt);
+            setOptVals(obj.OptiVars, X_opt_s);
+            
+            % Ensure the QuadRotor gets updated to the correct sym param vals
+            obj.updateParamVals(XAllOpt(obj.OptiVars));
+            
+            % Update QuadRotor's Flight Time to the optimal value
+            obj.quad_rotor.flight_time = opt_flight_time;
+            
+
             
             function [c,ceq] = nlcon(x)
                 c_1 = distToBoundary(obj.propAeroFit.Boundary, x(find(obj.OptiVars, ["D", "P"])));
@@ -139,6 +146,10 @@ classdef Optimization_General < handle
            end
         end
         
+        function resetParamVals(obj)
+           obj.updateParamVals(vertcat(obj.OptiVars.x0)); 
+        end
+        
         function updateParamVals(obj,X)
             %X_prop = [D;P]
             X_prop = X(find(obj.OptiVars, ["D", "P"]));
@@ -154,7 +165,7 @@ classdef Optimization_General < handle
             %X_motor = [kV; Rm]
             X_motor = X(find(obj.OptiVars, ["kV", "Rm"]));
             Rm_motor = X_motor(2);
-            [K_t_motor, M_motor, J_motor] = calcMotorProps(obj.motorFit, X_motor);
+            [K_t_motor, M_motor, J_motor, D_motor] = calcMotorProps(obj.motorFit, X_motor);
             
             % sym_params:
             %    D_prop
@@ -186,6 +197,7 @@ classdef Optimization_General < handle
             QR.Motor.K_t.Value = K_t_motor;
             QR.Motor.M.Value = M_motor;
             QR.Motor.Rm.Value = Rm_motor;
+            QR.Motor.D.Value = D_motor;
 
             obj.quad_rotor.update();
         end

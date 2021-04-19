@@ -116,7 +116,7 @@ classdef motorFit < handle
     end
     
     methods % Working Methods
-        function [K_t,M,J] = calcMotorProps(obj,varargin)
+        function [K_t,M,J,D] = calcMotorProps(obj,varargin)
             if nargin == 2
                 X = varargin{1};
                 kV = X(1,:);

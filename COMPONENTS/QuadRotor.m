@@ -19,8 +19,11 @@ classdef QuadRotor < System
         HoverSpeed function_handle  % Speed required to hover
         
         % Parameter-dependent properties
-        SS_QAve QRState % Steady State at average battery voltage
-        flight_time double % Expensive calculation is cached 
+        SS_QAve QRState % Steady State at average battery voltage 
+    end
+    
+    properties
+        flight_time double % Expensive calculation is cached
     end
     
     % Easier Access to Components
@@ -34,8 +37,8 @@ classdef QuadRotor < System
     end
     
     properties (Dependent)
-        PerformanceData PerformanceData
-        DesignData DesignData
+        PerformanceData
+        DesignData
     end
     
     properties (Hidden)
@@ -667,6 +670,7 @@ classdef QuadRotor < System
         end
         
         function dd = get.DesignData(obj)
+            dd = exportStruct(obj.Params);
         end
     end
     
