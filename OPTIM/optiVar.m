@@ -68,12 +68,12 @@ classdef optiVar < compParam
         end
         
         function xall = XAll(obj, x)
-            xall = vertcat(obj.x0);
-            xall(isEnabled(obj)) = unscale(obj,x);
-        end
-        
-        function xall = XAllOpt(obj)
-            xall = vertcat(obj.Value);
+            if nargin == 2
+                xall = vertcat(obj.Value);
+                xall(isEnabled(obj)) = unscale(obj,x);
+            elseif nargin == 1
+                xall = vertcat(obj.Value);
+            end
         end
         
         function setEnabled(obj, arg, bool)
@@ -97,11 +97,11 @@ classdef optiVar < compParam
             end
         end
         
-        function setOptVals(obj, val)
+        function setVals(obj, val)
             val = unscale(obj, val);
-            i = find(isEnabled(obj));
-            for j = 1:numel(i)
-                obj(j).Value = val(j);
+            j = find(isEnabled(obj));
+            for i = 1:numel(val)
+                obj(j(i)).Value = val(i);
             end
         end     
     end
@@ -118,11 +118,43 @@ classdef optiVar < compParam
         end
         
         function x_s = scale(obj, x)
-            x_s = x./scaleFactors(obj);
+            if nargin > 1
+                x_s = x./scaleFactors(obj);
+            elseif nargin == 1
+                x_s = filterEnabled(obj, 'Value')./scaleFactors(obj);
+            end
         end
         
         function x_u = unscale(obj,x)
-            x_u = x.*scaleFactors(obj);
+            if nargin > 1
+                x_u = x.*scaleFactors(obj);
+            elseif nargin == 1
+                x_u = filterEnabled(obj, 'Value').*scaleFactors(obj);
+            end
+        end
+        
+        function v = linspace(obj, n)
+            v = linspace(obj.lb, obj.ub, n);
+        end
+        
+        function reset(obj_array)
+           for i = 1:numel(obj_array)
+               obj = obj_array(i);
+               obj.Value = obj.x0;
+               obj.Enabled = 1;
+           end
+        end
+    end
+    
+    methods (Hidden)
+        function dispAll(obj_array)
+            % Modifies method from Mixin.Custom Display
+            tbl = table(vertcat(obj_array.Sym), vertcat(obj_array.Value), vertcat(obj_array.Unit),...
+                vertcat(obj_array.x0), vertcat(obj_array.lb), vertcat(obj_array.ub),...
+                vertcat(obj_array.Enabled), vertcat(obj_array.Scaled), vertcat(obj_array.scaleFactor),...
+                vertcat(obj_array.Description), vertcat(vertcat(obj_array.Parent).Name),...
+                'VariableNames', ["Sym", "Value", "Unit","X0", "LB", "UB","Enabled", "Scaled", "Scale Factor", "Description", "Parent"]);
+            disp(tbl);
         end
     end
 end

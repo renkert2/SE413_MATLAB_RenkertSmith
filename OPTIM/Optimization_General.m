@@ -45,15 +45,15 @@ classdef Optimization_General < handle
             % Set Optimization Variables
             OV(1) = optiVar("D", obj.propAeroFit.Boundary.X_mean(1), obj.propAeroFit.Boundary.X_lb(1), 0.35);
             OV(1).Description = "Diameter";
-            OV(1).Unit = u.m;
+            OV(1).Unit = "m";
             OV(1).Parent = prop;
             
             OV(2) = optiVar("P", obj.propAeroFit.Boundary.X_mean(2), obj.propAeroFit.Boundary.X_lb(2), obj.propAeroFit.Boundary.X_ub(2));
             OV(2).Description = "Pitch";
-            OV(2).Unit = u.m;
+            OV(2).Unit = "m";
             OV(2).Parent = prop;
             
-            OV(3) = optiVar("N_p", 1, 0.1, 20);
+            OV(3) = optiVar("N_p", 1, 0.1, 10);
             OV(3).Description = "Parallel Cells";
             OV(3).Parent = batt;
             
@@ -63,18 +63,18 @@ classdef Optimization_General < handle
             
             OV(5) = optiVar("kV", obj.motorFit.Boundary.X_mean(1), obj.motorFit.Boundary.X_lb(1), obj.motorFit.Boundary.X_ub(1));
             OV(5).Description = "Speed Constant";
-            OV(5).Unit = u.rpm / u.V;
+            OV(5).Unit = "RPM/V";
             OV(5).Parent = motor;
             
             OV(6) = optiVar("Rm", obj.motorFit.Boundary.X_mean(2), obj.motorFit.Boundary.X_lb(2), obj.motorFit.Boundary.X_ub(2));
             OV(6).Description = "Phase Resistance";
-            OV(6).Unit = u.Ohm;
+            OV(6).Unit = "Ohm";
             OV(6).Parent = motor;
 
             obj.OptiVars = OV';
         end
 
-        function [X_opt, opt_flight_time, output] = Optimize(obj,r, opts)
+        function [X_opt_s, opt_flight_time, output] = Optimize(obj,r, opts)
             arguments
                 obj
                 r = @(t) (t>0)
@@ -82,27 +82,29 @@ classdef Optimization_General < handle
                 opts.DiffMinChange = 1e-4
                 opts.FlightTimeOpts cell = {}
                 opts.OptimizationOpts cell = {}
+                opts.OptimizationOutput logical = true
             end
             
-            optimopts = optimoptions('fmincon', 'Algorithm', 'sqp','Display', 'iter-detailed', 'PlotFcn', {@optimplotx,@optimplotfval,@optimplotfirstorderopt});
+            optimopts = optimoptions('fmincon', 'Algorithm', 'sqp');
             if opts.SimulationBased
                 optimopts = optimoptions(optimopts, 'DiffMinChange', opts.DiffMinChange);
             end
+            if opts.OptimizationOutput
+                optimopts = optimoptions(optimopts, 'Display', 'iter-detailed', 'PlotFcn', {@optimplotx,@optimplotfval,@optimplotfirstorderopt});
+            end
             optimopts = optimoptions(optimopts, opts.OptimizationOpts{:});
 
-            [X_opt_s, fval, ~, output] = fmincon(@(X_s) -obj.flightTime(XAll(obj.OptiVars,X_s),r,'SimulationBased', opts.SimulationBased, opts.FlightTimeOpts{:}),X0(obj.OptiVars), [], [], [], [], LB(obj.OptiVars), UB(obj.OptiVars), @(x) nlcon(XAll(obj.OptiVars,x)), optimopts);
+            [X_opt_s, fval, ~, output] = fmincon(@(X_s) -obj.flightTime(XAll(obj.OptiVars,X_s),r,'SimulationBased', opts.SimulationBased, opts.FlightTimeOpts{:}),X0(obj.OptiVars), [], [], [], [], LB(obj.OptiVars), UB(obj.OptiVars), @(X_s) nlcon(XAll(obj.OptiVars,X_s)), optimopts);
             opt_flight_time = -fval;
             
-            % Set Optimal Values in OptiVars
-            setOptVals(obj.OptiVars, X_opt_s);
+            % Set Current Values to Optimal Value in OptiVars
+            setVals(obj.OptiVars, X_opt_s);
             
             % Ensure the QuadRotor gets updated to the correct sym param vals
-            obj.updateParamVals(XAllOpt(obj.OptiVars));
+            obj.updateParamVals(XAll(obj.OptiVars));
             
             % Update QuadRotor's Flight Time to the optimal value
             obj.quad_rotor.flight_time = opt_flight_time;
-            
-
             
             function [c,ceq] = nlcon(x)
                 c_1 = distToBoundary(obj.propAeroFit.Boundary, x(find(obj.OptiVars, ["D", "P"])));
@@ -125,25 +127,103 @@ classdef Optimization_General < handle
                 opts.ScalingFactor = 1500
                 opts.Timeout = 5
             end
-
-           
-           try
-               obj.updateParamVals(X);
-               if opts.SimulationBased
-                   if opts.RecomputeControlGains
-                       obj.quad_rotor.calcControllerGains;
+            try
+                obj.updateParamVals(X);
+                if opts.SimulationBased
+                    if opts.RecomputeControlGains
+                        obj.quad_rotor.calcControllerGains;
+                    end
+                    ft = obj.quad_rotor.flightTime(r,'SimulationBased',true, 'InterpolateTime', opts.InterpolateTime, 'Timeout', opts.Timeout);
+                else
+                    ft = obj.quad_rotor.flightTime('SimulationBased',false);
+                end
+            catch
+                ft = NaN;
+            end
+            
+            if opts.Scaled
+                ft = ft/opts.ScalingFactor;
+            end
+        end
+        
+        function [X,ft,X_opt,ft_opt] = sweep(obj, vars, n)
+            N_vars = numel(vars);
+            assert(N_vars <=2 && N_vars ~= 0, "Choose 1 or 2 optimization variables for sweep")
+            if ~isa(vars, 'optiVar')
+                try
+                    vars = string(vars);
+                    vars = obj.OptiVars.get(vars);
+                catch
+                    error('vars argument must be optiVar objects or convertable to strings');
+                end
+            end
+            
+            obj.OptiVars.reset();
+            % Obtain baseline optimal point
+            [~,ft_opt] = obj.Optimize('OptimizationOutput', false, 'OptimizationOpts', {'Display', 'none'});
+            X_opt = vertcat(vars.Value);
+            
+            for i = 1:N_vars
+                % Each variable in the sweep is fixed at a point and is 
+                % no longer optimized
+                vars(i).Enabled = false;
+            end
+            
+           switch N_vars
+               case 1
+                   X = linspace(vars, n);
+                   ft = NaN(size(X));
+                   for i = 1:numel(X)
+                       vars.Value = X(i);
+                       ft(i) = optiWrapper();
                    end
-                   ft = obj.quad_rotor.flightTime(r,'SimulationBased',true, 'InterpolateTime', opts.InterpolateTime, 'Timeout', opts.Timeout);
-               else
-                   ft = obj.quad_rotor.flightTime('SimulationBased',false);
-               end
-           catch
-               ft = NaN;
+                   
+                   figure
+                   plot(X,ft)
+                   hold on
+                   plot(X_opt, ft_opt, '.r', 'MarkerSize', 20)
+                   hold off
+               case 2
+                   x = linspace(vars(1),n);
+                   y = linspace(vars(2),n);
+         
+                   ft = NaN(numel(y), numel(x));
+                   for i = 1:numel(x)
+                       for j = 1:numel(y)
+                           vars(1).Value = x(i);
+                           vars(2).Value = y(j);
+                           ft(j,i) = optiWrapper();
+                       end
+                   end
+                   
+                   [X(:,:,1), X(:,:,2)] = meshgrid(x,y);
+                   figure
+                   surf(X(:,:,1), X(:,:,2),ft);
+                   hold on
+                   plot3(X_opt(1), X_opt(2), ft_opt, '.r', 'MarkerSize', 20);
+                   hold off
            end
            
-           if opts.Scaled
-               ft = ft/opts.ScalingFactor;
+           % Format Figure
+           title("Carpet Plot")
+           xlabel(latex(vars(1)), 'Interpreter', 'latex')
+           if N_vars == 2
+               ylabel(latex(vars(2)), 'Interpreter', 'latex')
+               zlabel('Flight Time (s)', 'Interpreter', 'latex')
+           else
+               ylabel('Flight Time (s)', 'Interpreter', 'latex')
            end
+           
+           % Clean Up
+           obj.OptiVars.reset();
+           
+            function ft = optiWrapper()
+                try
+                    [~,ft] = obj.Optimize('OptimizationOutput', false);
+                catch
+                    ft = NaN;
+                end
+            end
         end
         
         function resetParamVals(obj)
