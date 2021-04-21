@@ -104,6 +104,16 @@ classdef optiVar < compParam
                 obj(j(i)).Value = val(i);
             end
         end     
+        
+        function [pcs,pc] = percentChange(obj, val)
+            if nargin == 1
+                val = vertcat(obj.Value);
+            end
+            
+            x0 = vertcat(obj.x0);
+            pc = (val-x0)./x0;
+            pcs = compose("%0.2f %%", 100*pc);
+        end        
     end
     
     methods (Hidden)
@@ -150,10 +160,10 @@ classdef optiVar < compParam
         function dispAll(obj_array)
             % Modifies method from Mixin.Custom Display
             tbl = table(vertcat(obj_array.Sym), vertcat(obj_array.Value), vertcat(obj_array.Unit),...
-                vertcat(obj_array.x0), vertcat(obj_array.lb), vertcat(obj_array.ub),...
+                vertcat(obj_array.x0), vertcat(obj_array.lb), vertcat(obj_array.ub), percentChange(obj_array),...
                 vertcat(obj_array.Enabled), vertcat(obj_array.Scaled), vertcat(obj_array.scaleFactor),...
                 vertcat(obj_array.Description), vertcat(vertcat(obj_array.Parent).Name),...
-                'VariableNames', ["Sym", "Value", "Unit","X0", "LB", "UB","Enabled", "Scaled", "Scale Factor", "Description", "Parent"]);
+                'VariableNames', ["Sym", "Value", "Unit","X0", "LB", "UB","% Change", "Enabled", "Scaled", "Scale Factor", "Description", "Parent"]);
             disp(tbl);
         end
     end
