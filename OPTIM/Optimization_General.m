@@ -146,7 +146,16 @@ classdef Optimization_General < handle
             end
         end
         
-        function [X,ft,X_opt,ft_opt] = sweep(obj, vars, n)
+        function [X,ft,X_opt,ft_opt,I,PD,DD] = sweep(obj, vars, n, constraint_fun)
+            % X is the vector of design variable values being swept across.
+            % - 1xn for 1 design var and nxnx2 meshgrid for 2 design vars
+            % ft is a vector or grid of flight times
+            % X_opt is the optimal design point, ft_opt is the optimal
+            % flight time
+            % I are the indices 1xv or (i;j)xv corresponding to points where a
+            % valid flight time was obtained. PD and DD are 1xv vectors of 
+            % PerformanceData and DesignData objects evaluated at the valid
+            % points
             N_vars = numel(vars);
             assert(N_vars <=2 && N_vars ~= 0, "Choose 1 or 2 optimization variables for sweep")
             if ~isa(vars, 'optiVar')
@@ -173,9 +182,16 @@ classdef Optimization_General < handle
                case 1
                    X = linspace(vars, n);
                    ft = NaN(size(X));
+                   valid_cnt = 0;
                    for i = 1:numel(X)
                        vars.Value = X(i);
-                       ft(i) = optiWrapper();
+                       [ft(i), pd, dd] = optiWrapper();
+                       if ~isnan(ft(i))
+                           valid_cnt = valid_cnt + 1;
+                           I(1,valid_cnt) = i;
+                           PD(1,valid_cnt) = pd;
+                           DD(1,valid_cnt) = dd;
+                       end
                    end
                    
                    figure
@@ -188,11 +204,28 @@ classdef Optimization_General < handle
                    y = linspace(vars(2),n);
          
                    ft = NaN(numel(y), numel(x));
+                   valid_cnt = 0;
                    for i = 1:numel(x)
                        for j = 1:numel(y)
-                           vars(1).Value = x(i);
-                           vars(2).Value = y(j);
-                           ft(j,i) = optiWrapper();
+                           if nargin == 4
+                               is_valid = (constraint_fun([x(i);y(j)])<=0);
+                           else
+                               is_valid = true;
+                           end
+                           
+                           if is_valid
+                               vars(1).Value = x(i);
+                               vars(2).Value = y(j);
+                               [ft(j,i), pd, dd] = optiWrapper();
+                               if ~isnan(ft(j,i))
+                                   valid_cnt = valid_cnt + 1;
+                                   I(:,valid_cnt) = [j;i];
+                                   PD(1,valid_cnt) = pd;
+                                   DD(1,valid_cnt) = dd;
+                               end
+                           else
+                               ft(j,i) = NaN;
+                           end
                        end
                    end
                    
@@ -217,11 +250,15 @@ classdef Optimization_General < handle
            % Clean Up
            obj.OptiVars.reset();
            
-            function ft = optiWrapper()
+            function [ft, pd, dd] = optiWrapper()
                 try
                     [~,ft] = obj.Optimize('OptimizationOutput', false);
+                    pd = obj.quad_rotor.PerformanceData;
+                    dd = obj.quad_rotor.DesignData;
                 catch
                     ft = NaN;
+                    pd = NaN;
+                    dd = NaN;
                 end
             end
         end
