@@ -1,5 +1,5 @@
 %% Battery
-[X,ft,X_opt,ft_opt,I,PD,DD] = sweep(o, ["N_p","N_s"], 50);
+[X,ft,X_opt,ft_opt,I,PD,DD] = sweep(o, ["N_p","N_s"], 50, 'ReverseSearch', true);
 s = struct();
 s.X = X;
 s.ft = ft;

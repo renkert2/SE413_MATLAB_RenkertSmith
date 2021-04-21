@@ -83,6 +83,7 @@ classdef Optimization_General < handle
                 opts.FlightTimeOpts cell = {}
                 opts.OptimizationOpts cell = {}
                 opts.OptimizationOutput logical = true
+                opts.InitializeFromValue logical = false
             end
             
             optimopts = optimoptions('fmincon', 'Algorithm', 'sqp');
@@ -93,8 +94,13 @@ classdef Optimization_General < handle
                 optimopts = optimoptions(optimopts, 'Display', 'iter-detailed', 'PlotFcn', {@optimplotx,@optimplotfval,@optimplotfirstorderopt});
             end
             optimopts = optimoptions(optimopts, opts.OptimizationOpts{:});
+            if opts.InitializeFromValue
+                x0 = .75*scale(obj.OptiVars) + .25*X0(obj.OptiVars);
+            else
+                x0 = X0(obj.OptiVars);
+            end
 
-            [X_opt_s, fval, ~, output] = fmincon(@(X_s) -obj.flightTime(XAll(obj.OptiVars,X_s),r,'SimulationBased', opts.SimulationBased, opts.FlightTimeOpts{:}),X0(obj.OptiVars), [], [], [], [], LB(obj.OptiVars), UB(obj.OptiVars), @(X_s) nlcon(XAll(obj.OptiVars,X_s)), optimopts);
+            [X_opt_s, fval, ~, output] = fmincon(@(X_s) -obj.flightTime(XAll(obj.OptiVars,X_s),r,'SimulationBased', opts.SimulationBased, opts.FlightTimeOpts{:}),x0, [], [], [], [], LB(obj.OptiVars), UB(obj.OptiVars), @(X_s) nlcon(XAll(obj.OptiVars,X_s)), optimopts);
             opt_flight_time = -fval;
             
             % Set Current Values to Optimal Value in OptiVars
@@ -146,7 +152,7 @@ classdef Optimization_General < handle
             end
         end
         
-        function [X,ft,X_opt,ft_opt,I,PD,DD] = sweep(obj, vars, n, constraint_fun)
+        function [X,ft,X_opt,ft_opt,I,PD,DD] = sweep(obj, vars, n, opts)
             % X is the vector of design variable values being swept across.
             % - 1xn for 1 design var and nxnx2 meshgrid for 2 design vars
             % ft is a vector or grid of flight times
@@ -156,6 +162,15 @@ classdef Optimization_General < handle
             % valid flight time was obtained. PD and DD are 1xv vectors of 
             % PerformanceData and DesignData objects evaluated at the valid
             % points
+            arguments
+                obj
+                vars
+                n double
+                opts.ConstraintFunction = []
+                opts.ReverseSearch logical = false
+                opts.InitializeFromValue logical = true
+            end
+            
             N_vars = numel(vars);
             assert(N_vars <=2 && N_vars ~= 0, "Choose 1 or 2 optimization variables for sweep")
             if ~isa(vars, 'optiVar')
@@ -181,6 +196,10 @@ classdef Optimization_General < handle
            switch N_vars
                case 1
                    X = linspace(vars, n);
+                   if opts.ReverseSearch
+                       X = fliplr(X);
+                   end
+                   
                    ft = NaN(size(X));
                    valid_cnt = 0;
                    for i = 1:numel(X)
@@ -202,13 +221,22 @@ classdef Optimization_General < handle
                case 2
                    x = linspace(vars(1),n);
                    y = linspace(vars(2),n);
+                   if opts.ReverseSearch
+                       x = fliplr(x);
+                       y = fliplr(y);
+                   end
+                   if ~isempty(opts.ConstraintFunction)
+                       const_fun_flag = true;
+                   else
+                       const_fun_flag = false;
+                   end
          
                    ft = NaN(numel(y), numel(x));
                    valid_cnt = 0;
                    for i = 1:numel(x)
                        for j = 1:numel(y)
-                           if nargin == 4
-                               is_valid = (constraint_fun([x(i);y(j)])<=0);
+                           if const_fun_flag
+                               is_valid = (opts.ConstraintFunction([x(i);y(j)])<=0);
                            else
                                is_valid = true;
                            end
@@ -222,10 +250,15 @@ classdef Optimization_General < handle
                                    I(:,valid_cnt) = [j;i];
                                    PD(1,valid_cnt) = pd;
                                    DD(1,valid_cnt) = dd;
+                                   disp("Point: "+string([x(i);y(j)])+" Flight Time: "+string(ft(j,i)))
+                               else
+                                   disp("Point: "+string([x(i);y(j)])+" Flight Time: NaN")
                                end
                            else
                                ft(j,i) = NaN;
+                               disp("Point: "+string([x(i);y(j)])+" Flight Time: Invalid Point")
                            end
+                           
                        end
                    end
                    
@@ -252,7 +285,7 @@ classdef Optimization_General < handle
            
             function [ft, pd, dd] = optiWrapper()
                 try
-                    [~,ft] = obj.Optimize('OptimizationOutput', false);
+                    [~,ft] = obj.Optimize('OptimizationOutput', false, 'OptimizationOpts', {'Display', 'none'}, 'InitializeFromValue',opts.InitializeFromValue);
                     pd = obj.quad_rotor.PerformanceData;
                     dd = obj.quad_rotor.DesignData;
                 catch
