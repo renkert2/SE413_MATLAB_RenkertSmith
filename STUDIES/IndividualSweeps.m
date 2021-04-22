@@ -3,7 +3,13 @@ individualSweeps = struct();
 ov = o.OptiVars;
 
 for v = ov'
-    [X,ft,X_opt,ft_opt,I,PD,DD] = sweep(o, v, 100);
+    if ismember(v.Sym,["D","P","N_s"])
+        rev_flag = true;
+    else
+        rev_flag = false;
+    end
+    
+    [X,ft,X_opt,ft_opt,I,PD,DD] = sweep(o, v, 100, 'ReverseSearch', rev_flag);
     s = struct();
     s.X = X;
     s.ft = ft;
