@@ -9,18 +9,36 @@ load propSweep
 % plot3(X_opt(1), X_opt(2), ft_opt, '.r', 'MarkerSize', 20);
 % hold off
 %% Thrust Ratio
+
+%% Battery
 tr = getGrid(battSweep.I,  [battSweep.PD.ThrustRatio], size(battSweep.ft));
 figure
 surf(battSweep.X(:,:,1), battSweep.X(:,:,2),tr);
+zlim([1 16])
+xlabel("$$N_p$$", 'Interpreter', 'latex')
+ylabel("$$N_s$$", 'Interpreter', 'latex')
+zlabel('Thrust Ratio', 'Interpreter', 'latex')
+title('Thrust Ratio vs. Battery Design')
+
+%% Motor
+tr = getGrid(motorSweep.I,  [motorSweep.PD.ThrustRatio], size(motorSweep.ft));
+figure
+surf(motorSweep.X(:,:,1), motorSweep.X(:,:,2),tr);
+xlabel("$$kV$$", 'Interpreter', 'latex')
+ylabel("$$R_m$$", 'Interpreter', 'latex')
+zlabel('Thrust Ratio', 'Interpreter', 'latex')
+title('Thrust Ratio vs. Motor Design')
+
+%% Propeller
+tr = getGrid(propSweep.I,  [propSweep.PD.ThrustRatio], size(propSweep.ft));
+figure
+surf(propSweep.X(:,:,1), propSweep.X(:,:,2),tr);
+zlim([1 16])
+xlabel("$$D$$", 'Interpreter', 'latex')
+ylabel("$$P$$", 'Interpreter', 'latex')
+zlabel('Thrust Ratio', 'Interpreter', 'latex')
+title('Thrust Ratio vs. Propeller Design')
 %%
-title("Carpet Plot")
-xlabel(latex(vars(1)), 'Interpreter', 'latex')
-if N_vars == 2
-    ylabel(latex(vars(2)), 'Interpreter', 'latex')
-    zlabel('Flight Time (s)', 'Interpreter', 'latex')
-else
-    ylabel('Flight Time (s)', 'Interpreter', 'latex')
-end
 
 function grid = getGrid(I,data,size)
     grid = NaN(size);

@@ -304,6 +304,7 @@ classdef Optimization_General < handle
             %X_prop = [D;P]
             X_prop = X(find(obj.OptiVars, ["D", "P"]));
             D_prop = X_prop(1);
+            P_prop = X_prop(2);
             [k_P_prop, k_T_prop] = calcPropCoeffs(obj.propAeroFit, X_prop);
             [M_prop,J_prop] = calcMassProps(obj.propMassFit, D_prop);
                    
@@ -337,6 +338,7 @@ classdef Optimization_General < handle
             
             % Prop
             QR.Propeller.D.Value = D_prop;
+            QR.Propeller.P.Value = P_prop;
             QR.Propeller.J.Value = J_prop;
             QR.Propeller.M.Value = M_prop;
             QR.Propeller.k_P.Value = k_P_prop;

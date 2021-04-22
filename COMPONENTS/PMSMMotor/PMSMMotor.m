@@ -25,7 +25,12 @@ classdef PMSMMotor < Component
         function K_t = kVToKt(kV)
             % Convert kV in rpm/V to torque constant Kt in N*m/A = V/(rad/s)
             kV_radps = kV*(2*pi)/60;
-            K_t = 1/kV_radps;
+            K_t = 1./kV_radps;
+        end
+        
+        function kV = KtTokV(Kt)
+            kV_radps = 1./Kt;
+            kV =kV_radps/((2*pi)/60);
         end
         
         function J = calcInertia(M,D)
