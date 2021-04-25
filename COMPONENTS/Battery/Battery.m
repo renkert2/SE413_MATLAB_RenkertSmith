@@ -6,8 +6,8 @@ classdef Battery < Component
     % All parameters specified per cell except for N_series and N_parallel
     
     properties
-        N_p {mustBeParam} = 1 % Number of cells in parallel
-        N_s {mustBeParam} = 3 % Number of cells in series
+        N_p {mustBeParam} = compParam('N_p',1,'AutoRename', true, 'Tunable', true) % Number of cells in parallel
+        N_s {mustBeParam} = compParam('N_s',3, 'AutoRename', true, 'Tunable', true) % Number of cells in series
         Q {mustBeParam} = 14400 % Coulombs
         R_s {mustBeParam} = (10e-3) / 3 % Series Resistance - Ohms - From Turnigy Website
         
@@ -135,6 +135,10 @@ classdef Battery < Component
             V_OCV_sym = symfun(poly2sym(p_coeffs, opts.sym_var), opts.sym_var);
             
             digits(digits_old);
+        end
+        
+        function mah = CoulombsTomAh(c)
+            mah = 0.2778*c;
         end
     end
 end

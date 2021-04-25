@@ -4,15 +4,15 @@ classdef PMSMMotor < Component
     
     properties
         L {mustBeParam} = 1.17e-4 % Inductance - H
-        J {mustBeParam} = 6.5e-6 % Mechanical rotational inertia - Modified to better reflect Ferry's simulation results
-        K_t {mustBeParam} = 0.00255 % Torque/Speed Coefficient - Nm/A = Vs/rad
-        Rm {mustBeParam} = 0.117 % Phase Resistance - Ohms
+        J {mustBeParam} = compParam('J', 6.5e-6, 'AutoRename', true, 'Tunable', true, 'Unit', "kg*m^2") % Mechanical rotational inertia - Modified to better reflect Ferry's simulation results
+        K_t {mustBeParam} = compParam('K_t', 0.00255, 'AutoRename', true, 'Tunable', true, 'Unit', "N*m/A") % Torque/Speed Coefficient - Nm/A = Vs/rad
+        Rm {mustBeParam} = compParam('Rm',0.117, 'AutoRename', true, 'Tunable', true, 'Unit', "Ohm") % Phase Resistance - Ohms
         B_v {mustBeParam} = 0 % Viscous Friction - N*m*s
         T_c {mustBeParam} = 0 % Coulomb Friction
         sigmoid_a_param {mustBeParam} = 10 % Parameter used to approximate sign function with sigmoid function sig(w) = 2/(1+Exp(-a*w))-1
         
-        M {mustBeParam} = extrinsicProp('Mass', 0.04);
-        D {mustBeParam} = 0.05
+        M {mustBeParam} = extrinsicProp('Mass',0.04, 'AutoRename', true, 'Tunable', true, 'Unit', "kg");
+        D {mustBeParam} = compParam('D', 0.05, 'AutoRename', true, 'Tunable', true, 'Unit', "m")
     end
     
     methods (Static)
