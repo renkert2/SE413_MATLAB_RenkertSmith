@@ -116,7 +116,7 @@ classdef motorFit < handle
     end
     
     methods % Working Methods
-        function [K_t,M,J,D] = calcMotorProps(obj,varargin)
+        function [M,J,D] = calcMotorProps(obj,varargin)
             if nargin == 2
                 X = varargin{1};
                 kV = X(1,:);
@@ -139,8 +139,6 @@ classdef motorFit < handle
                 out_str = num2str(out_i, '%d, ');
                 warning("Points %s Outside motorFit Boundary", out_str)
             end
-            
-            K_t = obj.kVToKt(kV);
             
             M = obj.Fit.Weight(kV,Rm);
             M = max(min(M,obj.Y_max(1)),obj.Y_min(1));

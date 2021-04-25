@@ -100,12 +100,3 @@ function plotFilledNaN(x,y, x_range, y_range)
         hold off
     end
 end
-
-function y = processSweep(I,data, len)
-    y = NaN(1,len);
-    
-    for i = 1:numel(data)
-        index = I(i);
-        y(index) = data(i);
-    end
-end

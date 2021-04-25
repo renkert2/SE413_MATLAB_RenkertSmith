@@ -67,7 +67,7 @@ classdef Optimization < handle
             obj.OptiVars = OV';
         end
 
-        function [X_opt_s, opt_flight_time, output] = Optimize(obj,r, opts)
+        function [X_opt_s, opt_flight_time, OO] = Optimize(obj,r, opts)
             arguments
                 obj
                 r = @(t) (t>0)
@@ -95,18 +95,22 @@ classdef Optimization < handle
             end
             lb = LB(obj.OptiVars);
             ub = UB(obj.OptiVars);
-
-            [X_opt_s, fval, ~, output] = fmincon(@objfun ,x0, [], [], [], [], lb, ub, @nlcon, optimopts);
-            opt_flight_time = -fval;
             
+            OO = OptimOutput();
+            [X_opt_s, fval, OO.exitflag, ~, OO.lambda, OO.grad, OO.hessian] = fmincon(@objfun ,x0, [], [], [], [], lb, ub, @nlcon, optimopts);
+            opt_flight_time = -fval;
+
+                       
             % Set Current Values to Optimal Value in OptiVars
             setVals(obj.OptiVars, X_opt_s);
             
             % Ensure the QuadRotor gets updated to the correct sym param vals
             obj.updateParamVals(XAll(obj.OptiVars));
+            OO.X_opt = unscale(obj.OptiVars);
             
             % Update QuadRotor's Flight Time to the optimal value
-            obj.QR.flight_time = opt_flight_time;     
+            obj.QR.flight_time = opt_flight_time;  
+            OO.F_opt = opt_flight_time;
             
             function f = objfun(X_s)
                 X = XAll(obj.OptiVars,X_s); % Unscale and return all
@@ -155,7 +159,7 @@ classdef Optimization < handle
             end
         end
         
-        function [X,ft,X_opt,ft_opt,I,PD,DD] = sweep(obj, vars, n, opts)
+        function so = sweep(obj, vars, n, opts)
             % X is the vector of design variable values being swept across.
             % - 1xn for 1 design var and nxnx2 meshgrid for 2 design vars
             % ft is a vector or grid of flight times
@@ -207,7 +211,7 @@ classdef Optimization < handle
                    valid_cnt = 0;
                    for i = 1:numel(X)
                        vars.Value = X(i);
-                       [ft(i), pd, dd] = optiWrapper();
+                       [ft(i), pd, dd, OO(i)] = optiWrapper();
                        if ~isnan(ft(i))
                            valid_cnt = valid_cnt + 1;
                            I(1,valid_cnt) = i;
@@ -216,11 +220,6 @@ classdef Optimization < handle
                        end
                    end
                    
-                   figure
-                   plot(X,ft)
-                   hold on
-                   plot(X_opt, ft_opt, '.r', 'MarkerSize', 20)
-                   hold off
                case 2
                    x = linspace(vars(1),n);
                    y = linspace(vars(2),n);
@@ -247,7 +246,7 @@ classdef Optimization < handle
                            if is_valid
                                vars(1).Value = x(i);
                                vars(2).Value = y(j);
-                               [ft(j,i), pd, dd] = optiWrapper();
+                               [ft(j,i), pd, dd, OO(j,i)] = optiWrapper();
                                if ~isnan(ft(j,i))
                                    valid_cnt = valid_cnt + 1;
                                    I(:,valid_cnt) = [j;i];
@@ -264,35 +263,34 @@ classdef Optimization < handle
                            
                        end
                    end
-                   
                    [X(:,:,1), X(:,:,2)] = meshgrid(x,y);
-                   figure
-                   surf(X(:,:,1), X(:,:,2),ft);
-                   hold on
-                   plot3(X_opt(1), X_opt(2), ft_opt, '.r', 'MarkerSize', 20);
-                   hold off
            end
            
-           % Format Figure
-           title("Carpet Plot")
-           xlabel(latex(vars(1)), 'Interpreter', 'latex')
-           if N_vars == 2
-               ylabel(latex(vars(2)), 'Interpreter', 'latex')
-               zlabel('Flight Time (s)', 'Interpreter', 'latex')
-           else
-               ylabel('Flight Time (s)', 'Interpreter', 'latex')
-           end
+           % Export Sweep Object
+           so = SweepData();
+           so.Vars = vars;
+           so.N_vars = N_vars;
+           so.X = X;
+           so.F = ft;
+           so.X_opt = X_opt;
+           so.F_opt = ft_opt;
+           so.I = I;
+           so.PD = PD;
+           so.DD = DD;
+           so.OO = OO;
            
            % Clean Up
            obj.OptiVars.reset();
            
-            function [ft, pd, dd] = optiWrapper()
+            function [ft, pd, dd, oo] = optiWrapper()
                 try
-                    [~,ft] = obj.Optimize('OptimizationOutput', false, 'OptimizationOpts', {'Display', 'none'}, 'InitializeFromValue',opts.InitializeFromValue);
+                    [~,ft,oo] = obj.Optimize('OptimizationOutput', false, 'OptimizationOpts', {'Display', 'none'}, 'InitializeFromValue',opts.InitializeFromValue);
                     pd = obj.QR.PerformanceData;
                     dd = obj.QR.DesignData;
                 catch
                     ft = NaN;
+                    oo = OptimOutput();
+                    oo.exitflag = -4;
                     pd = NaN;
                     dd = NaN;
                 end
@@ -317,8 +315,9 @@ classdef Optimization < handle
             
             %X_motor = [kV; Rm]
             X_motor = X(find(obj.OptiVars, ["kV", "Rm"]));
+            kV_motor = X_motor(1);
             Rm_motor = X_motor(2);
-            [K_t_motor, M_motor, J_motor, D_motor] = calcMotorProps(obj.motorFit, X_motor);
+            [M_motor, J_motor, D_motor] = calcMotorProps(obj.motorFit, X_motor);
             
             % sym_params:
             %    D_prop
@@ -347,7 +346,7 @@ classdef Optimization < handle
             
             % Motor
             QR.Motor.J.Value = J_motor;
-            QR.Motor.K_t.Value = K_t_motor;
+            QR.Motor.kV.Value = kV_motor;
             QR.Motor.M.Value = M_motor;
             QR.Motor.Rm.Value = Rm_motor;
             QR.Motor.D.Value = D_motor;

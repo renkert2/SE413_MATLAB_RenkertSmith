@@ -7,7 +7,7 @@ classdef Battery < Component
     
     properties
         N_p {mustBeParam} = compParam('N_p',1,'AutoRename', true, 'Tunable', true) % Number of cells in parallel
-        N_s {mustBeParam} = compParam('N_s',3, 'AutoRename', true, 'Tunable', true) % Number of cells in series
+        N_s {mustBeParam} = compParam('N_s',6, 'AutoRename', true, 'Tunable', true) % Number of cells in series
         Q {mustBeParam} = 14400 % Coulombs
         R_s {mustBeParam} = (10e-3) / 3 % Series Resistance - Ohms - From Turnigy Website
         

@@ -1,24 +1,14 @@
-individualSweeps = struct();
-
 ov = o.OptiVars;
-
-for v = ov'
-    if ismember(v.Sym,["D","P","N_s"])
+individualSweeps = SweepData.empty();
+for i = 1:numel(ov)
+    v = ov(i);
+    if ismember(v.Sym,["D","P","kV"])
         rev_flag = true;
     else
         rev_flag = false;
     end
     
-    [X,ft,X_opt,ft_opt,I,PD,DD] = sweep(o, v, 100, 'ReverseSearch', rev_flag);
-    s = struct();
-    s.X = X;
-    s.ft = ft;
-    s.X_opt = X_opt;
-    s.ft_opt = ft_opt;
-    s.I = I;
-    s.PD = PD;
-    s.DD = DD;
-    individualSweeps.(v.Sym) = s;
+    individualSweeps(i) = sweep(o, v, 5, 'ReverseSearch', rev_flag);
 end
 
 save('individualSweeps.mat', 'individualSweeps');
