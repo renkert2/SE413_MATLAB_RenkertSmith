@@ -8,7 +8,7 @@ for i = 1:numel(ov)
         rev_flag = false;
     end
     
-    individualSweeps(i) = sweep(o, v, 5, 'ReverseSearch', rev_flag);
+    individualSweeps(i) = sweep(o, v, 100, 'ReverseSearch', rev_flag);
 end
 
 save('individualSweeps.mat', 'individualSweeps');
