@@ -34,7 +34,7 @@ classdef Optimization < handle
             motor = obj.QR.Motor;
             
             % Set Optimization Variables
-            OV(1) = optiVar("D", obj.propAeroFit.Boundary.X_mean(1), obj.propAeroFit.Boundary.X_lb(1), 0.35);
+            OV(1) = optiVar("D", obj.propAeroFit.Boundary.X_mean(1), obj.propAeroFit.Boundary.X_lb(1),obj.propAeroFit.Boundary.X_ub(1));
             OV(1).Description = "Diameter";
             OV(1).Unit = "m";
             OV(1).Parent = prop;
@@ -48,21 +48,21 @@ classdef Optimization < handle
             OV(3).Description = "Parallel Cells";
             OV(3).Parent = batt;
             
-            OV(4) = optiVar("N_s", 3, 1, 12);
-            OV(4).Description = "Series Cells";
-            OV(4).Parent = batt;
-            OV(4).Value = 6;
-            OV(4).Enabled = false; % Higher voltages are always best
+%             OV(4) = optiVar("N_s", 3, 1, 12);
+%             OV(4).Description = "Series Cells";
+%             OV(4).Parent = batt;
+%             OV(4).Value = 6;
+%             OV(4).Enabled = false; % Higher voltages are always best
             
-            OV(5) = optiVar("kV", obj.motorFit.Boundary.X_mean(1), obj.motorFit.Boundary.X_lb(1), obj.motorFit.Boundary.X_ub(1));
-            OV(5).Description = "Speed Constant";
-            OV(5).Unit = "RPM/V";
+            OV(4) = optiVar("kV", obj.motorFit.Boundary.X_mean(1), obj.motorFit.Boundary.X_lb(1), obj.motorFit.Boundary.X_ub(1));
+            OV(4).Description = "Speed Constant";
+            OV(4).Unit = "RPM/V";
+            OV(4).Parent = motor;
+            
+            OV(5) = optiVar("Rm", obj.motorFit.Boundary.X_mean(2), obj.motorFit.Boundary.X_lb(2), obj.motorFit.Boundary.X_ub(2));
+            OV(5).Description = "Phase Resistance";
+            OV(5).Unit = "Ohm";
             OV(5).Parent = motor;
-            
-            OV(6) = optiVar("Rm", obj.motorFit.Boundary.X_mean(2), obj.motorFit.Boundary.X_lb(2), obj.motorFit.Boundary.X_ub(2));
-            OV(6).Description = "Phase Resistance";
-            OV(6).Unit = "Ohm";
-            OV(6).Parent = motor;
 
             obj.OptiVars = OV';
         end
@@ -312,9 +312,8 @@ classdef Optimization < handle
             [M_prop,J_prop] = calcMassProps(obj.propMassFit, D_prop);
                    
             %X_batt = [N_p; N_s]
-            X_batt = X(find(obj.OptiVars, ["N_p", "N_s"]));
+            X_batt = X(find(obj.OptiVars, ["N_p"]));
             N_p_batt = X_batt(1);
-            N_s_batt = X_batt(2);
             
             %X_motor = [kV; Rm]
             X_motor = X(find(obj.OptiVars, ["kV", "Rm"]));
@@ -337,7 +336,6 @@ classdef Optimization < handle
             
             % Battery
             QR.Battery.N_p.Value = N_p_batt;
-            QR.Battery.N_s.Value = N_s_batt;
             
             % Prop
             QR.Propeller.D.Value = D_prop;
