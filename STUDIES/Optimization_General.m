@@ -64,7 +64,7 @@ classdef Optimization_General < handle
                 r = @(t) (t>0)
                 opts.SimulationBased = false
                 opts.DiffMinChange = 1e-4
-                opts.FlightTimeOpts cell = {}
+                opts.FlightTimeOpts cell = {'SimulationOpts',{'RelTol', 1e-6}}
                 opts.OptimizationOpts cell = {}
             end
             
@@ -74,7 +74,7 @@ classdef Optimization_General < handle
             end
             optimopts = optimoptions(optimopts, opts.OptimizationOpts{:});
 
-            [opt_X, fval, ~, output] = fmincon(@(X) -obj.flightTime(X,r,'SimulationBased', opts.SimulationBased, opts.FlightTimeOpts{:}),obj.X0, [], [], [], [], obj.lb, obj.ub, @(x) nlcon(obj,x), optimopts);
+            [opt_X, fval, ~, output] = fmincon(@(X) -obj.flightTime(X,r,'SimulationBased', opts.SimulationBased,opts.FlightTimeOpts{:}),obj.X0, [], [], [], [], obj.lb, obj.ub, @(x) nlcon(obj,x), optimopts);
 
             opt_flight_time = -fval;
         end
@@ -89,7 +89,8 @@ classdef Optimization_General < handle
                 opts.InterpolateTime = false
                 opts.Scaled = false
                 opts.ScalingFactor = 1500
-                opts.Timeout = 5
+                opts.Timeout = 60
+                opts.SimulationOpts = {'RelTol',1e-6}
             end
 
            
@@ -99,7 +100,7 @@ classdef Optimization_General < handle
                    if opts.RecomputeControlGains
                        obj.quad_rotor.calcControllerGains;
                    end
-                   ft = obj.quad_rotor.flightTime(r,'SimulationBased',true, 'InterpolateTime', opts.InterpolateTime, 'Timeout', opts.Timeout);
+                   ft = obj.quad_rotor.flightTime(r,'SimulationBased',true, 'InterpolateTime', opts.InterpolateTime, 'Timeout', opts.Timeout, 'SimulationOpts', opts.SimulationOpts);
                else
                    ft = obj.quad_rotor.flightTime('SimulationBased',false);
                end

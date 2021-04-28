@@ -426,6 +426,7 @@ classdef QuadRotor < System
                 opts.MaxClimbRateReference double = 20
                 opts.MaxSimTime double = 5e4
                 opts.Timeout double = inf
+                opts.RelTol double = 1e-6
                 opts.PlotResults logical = true
                 opts.FeedForwardW logical = true
                 opts.FeedForwardU logical = true
@@ -511,7 +512,7 @@ classdef QuadRotor < System
             x_0(i_x_g(1)) = 1;
             
             % Run Simulation
-            sim_opts = odeset('Events', @emptyBattery, 'OutputFcn', @odeFunc, 'RelTol', 1e-6, 'NonNegative', i_x_b(1), opts.SolverOpts{:}); 
+            sim_opts = odeset('Events', @emptyBattery, 'OutputFcn', @odeFunc, 'RelTol', opts.RelTol, 'NonNegative', i_x_b(1), opts.SolverOpts{:}); 
             errFlag = 0;
             tic
             [t_out,x_out] = ode23tb(@(t,x) f_sys_cl(t,x), [0 opts.MaxSimTime], x_0, sim_opts);
