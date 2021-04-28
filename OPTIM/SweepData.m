@@ -44,30 +44,56 @@ classdef SweepData
             end
         end
         
-        function plotGeneral(obj, y, y_range)
+        function [l,p] = plotGeneral(obj, y, y_range)
             x = obj.X;
-            plot(x,y);
+            l = plot(x,y);
+            set(l,'DisplayName', 'Data');
             xlim([obj.Vars.lb obj.Vars.ub]);
             ylim(y_range);
             
+            hold on
             % NaN Highlighting
-            nan_i = find([isnan(y)]);
-            
-            if nan_i
-                split_i = find(diff(nan_i) > 1) + 1;
-                nan_groups = [1 split_i numel(y)];
-                hold on
-                for i = 1:(numel(split_i)+1)
-                    group_i = nan_i(nan_i >= nan_groups(i) & nan_i <= nan_groups(i+1));
-                    start_x = x(max(1,group_i(1)-1));
-                    finish_x = x(min(group_i(end)+1, numel(x)));
-                    
-                    patch([start_x start_x finish_x finish_x], [y_range fliplr(y_range)], 'r','FaceAlpha',0.2,'EdgeColor','none');
-                end
-                hold off
-            end
+            p1 = highlightGroups([isnan(y)], 'k');
+            set(p1, 'DisplayName', 'Infeasible Areas');
             
             % Constraint Highlighting
+            s = lambdaData(obj.OO);
+            active = s.ineqnonlin > 0;
+            p2 = highlightGroups(active(1,:),'b');
+            set(p2, 'DisplayName', 'Propeller Constraint');
+            
+            p3 = highlightGroups(active(2,:),'r');
+            set(p3, 'DisplayName', 'Motor Constraint');
+            
+            hold off
+            
+            p = [p1; p2; p3];
+            
+            function p = highlightGroups(index, color)
+                index(end) = false;
+                if any(index)
+                    % Find Starts
+                    A = [index false];
+                    B = [false index];
+                    start_i = A > B;
+                    start_i = start_i(1:(end-1));
+                    
+                    % Find Ends
+                    end_i = B > A;
+                    end_i = [false end_i(2:(end-1))];
+                    
+                    starting_x = x(start_i);
+                    ending_x = x(end_i);
+                    
+                    for i = 1:sum(start_i)
+                        start_x = starting_x(i);
+                        finish_x = ending_x(i);
+                        p = patch([start_x start_x finish_x finish_x], [y_range fliplr(y_range)], color,'FaceAlpha',0.1,'EdgeColor','none');
+                    end
+                else
+                    p = matlab.graphics.primitive.Patch.empty();
+                end
+            end
         end
         
         function corrplot(obj_array)
@@ -84,6 +110,9 @@ classdef SweepData
             lb = [vars.lb];
             ub = [vars.ub];
             
+            l = {}; % Line Objects
+            p = {}; % Patch Objects
+            
             tile_counter = 1;
             CMat = zeros(N,N);
             for i = 1:N
@@ -93,44 +122,50 @@ classdef SweepData
                     tile_counter = tile_counter+1;
                     
                     y_range = [lb(i) ub(i)];
-                    plotGeneral(obj_array(j), y, y_range);
+                    [l{j,i}, p{j,i}] = plotGeneral(obj_array(j), y, y_range);
                     
                     if j == 1
-                        ylabel(latex(vars(i)),lblspecs{:});
+                        ylabel(latex(vars(i), 'UnitFlag', false),lblspecs{:});
                     else
                         set(gca,'Yticklabel',[])
                     end
                     if i == numel(vars)
-                        xlabel(latex(vars(j)), lblspecs{:});
+                        xlabel(latex(vars(j), 'UnitFlag', false), lblspecs{:});
                     else
                         set(gca,'Xticklabel',[])
                     end
                 end
             end
+            % Find unique line colors
+            lines = vertcat(l{:});
+            colors = vertcat(lines.Color);
+            [~,unique_l_i] = unique(colors, 'rows');
+            
+            % Find unique patch colors
+            patches = vertcat(p{:});
+            colors = vertcat(patches.FaceColor);
+            [~,unique_p_i] = unique(colors, 'rows');
+            
+            lgd = legend([lines(unique_l_i); patches(unique_p_i)]);
+            lgd.Layout.Tile = 'east';
         end
         
         function [c,x,y] = correlate(obj_array, var1, var2)
             x = obj_array(var1).X;
             dd_array = [obj_array(var1).DD.(obj_array(var2).Vars.Parent.Name)];
             data = [dd_array.(obj_array(var2).Vars.Sym)];
-            y = SweepData.processSweep(obj_array(var1).I, data, length(x));
+            y = processCatData(obj_array(var1), data);
             m = [x',y'];
             m = m(all(~isnan(m),2),:);
             c = corrcoef(m);
             c = c(1,2);
         end
         
-    end
-    
-    methods (Static)
-        function y = processSweep(I,data,len)
-            y = NaN(1,len);
-            
-            for i = 1:numel(data)
-                index = I(i);
-                y(index) = data(i);
-            end
+        function y = processCatData(obj,data)
+            y = NaN(size(data,1),length(obj.X));
+            y(:,obj.I) = data;
         end
+        
     end
 end
 

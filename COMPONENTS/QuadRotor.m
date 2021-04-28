@@ -3,6 +3,10 @@ classdef QuadRotor < System
         K_PI_speed % Inner Rotor Speed Loop controller Gains
         K_PD_vel % Outer Height Loop controller Gains
         K_P_height % Outer Velocity Loop controller gains
+        
+        rho double = 1.205 % Air Density - kg/m^3
+        Height double = 0.1 % Approximate Height of the quadrotor in m, used to estimate drag
+        DragCoefficient double = 1.2
     end
     
     properties (SetAccess = private)
@@ -11,12 +15,17 @@ classdef QuadRotor < System
         SimpleModel Model
         LinearDynamicModel LinearModel
         
-        % Can make this a list of symQuantities if necessary.
+        % SymQuantities - Properties that are functions of the QuadRotor
+        % Parameters
+        Mass function_handle
         BattCap function_handle
         V_OCV_pack function_handle % Open circuit voltage of the battery pack; function of Q. 
-        Mass function_handle
         HoverThrust function_handle % Thrust required to hover
         HoverSpeed function_handle  % Speed required to hover
+        RotorSpeed function_handle % Calculates rotor speed as a function of total required thrust
+        
+        % Drag Model Sym Quantities
+        ReferenceAreaVector
         
         % Parameter-dependent properties
         SS_QAve QRState % Steady State at average battery voltage 
@@ -112,7 +121,7 @@ classdef QuadRotor < System
             PF = @(s) matlabFunction(p,s); % Wrapper function for brevity
             
             % Battery Capacity
-            batt = obj.getComponents('Battery');
+            batt = obj.Battery;
             obj.BattCap = PF(batt.Capacity); % A*s
             
             % Battery Pack V_OCV
@@ -127,12 +136,23 @@ classdef QuadRotor < System
             % Hover Thrust
             hover_thrust = 9.81*mass;
             obj.HoverThrust = PF(hover_thrust); % Total Thrust required to hover
-            
+
             % Hover Speed
-            mp = obj.getComponents('MotorProp');
-            prop = getComponents(mp(1), 'Propeller');
+            prop = obj.Propeller;
             hover_speed = prop.calcSpeed(hover_thrust/4);
             obj.HoverSpeed = PF(hover_speed);
+            
+            % Rotor Speed Function 
+            % - Calculates required rotor speed as a function of total
+            % thrust
+            T_reqd = sym("T_reqd");
+            rotor_speed = prop.calcSpeed(T_reqd/4);
+            obj.RotorSpeed = matlabFunction(p, rotor_speed, {T_reqd});
+            
+            % Reference Area Vector for Drag Model (Weekly Report 5/3/21)
+            h = obj.Height;
+            r = obj.Propeller.D*1;
+            obj.ReferenceAreaVector = PF([2*r*h; 2*r*h; pi*r^2]);
         end
         
         function setSimpleModel(obj)
@@ -249,24 +269,31 @@ classdef QuadRotor < System
             obj.SteadyStateIO_func = matlabFunction(obj.Params, obj.SimpleModel.f_sym(2:end),args);
         end
         
-        function qrss = calcSteadyState(obj, q_bar, opts)
-            % Calculates steady-state values at hover, returns QRSteadyState object
+        function qrss = calcSteadyState(obj, q_bar, T_reqd, opts)
+            % Calculates steady-state values of the powertrain model at thrust T_reqd, returns QRSteadyState object
             % Default value for q_bar is the average battery soc
+            % Default value fot T_reqd is the HoverThrust
             
             arguments
                 obj
                 q_bar double = [];
+                T_reqd double = [];
                 opts.SolverOpts struct = optimset('Display','off');
             end
             
             if isempty(q_bar)
-                q_bar = getComponents(obj,'Battery').Averaged_SOC;
+                q_bar = obj.Battery.Averaged_SOC;
             end
             
-            hover_speed = obj.HoverSpeed();
+            if isempty(T_reqd)
+                rotor_speed = obj.HoverSpeed();
+            else
+                rotor_speed = obj.RotorSpeed(T_reqd);
+            end
+            
             
             x0 = [0.5; 1];
-            [x_sol, ~, exit_flag] = fsolve(@(x) obj.SteadyState_func(x,[q_bar;hover_speed]), x0, opts.SolverOpts);
+            [x_sol, ~, exit_flag] = fsolve(@(x) obj.SteadyState_func(x,[q_bar;rotor_speed]), x0, opts.SolverOpts);
             if exit_flag <= 0
                 error('No solution found');
             elseif x_sol(1) > 1
@@ -277,7 +304,7 @@ classdef QuadRotor < System
             
             qrss = QRState();
             qrss.q = q_bar;
-            qrss.x = [q_bar; x_sol(2:end); hover_speed];
+            qrss.x = [q_bar; x_sol(2:end); rotor_speed];
             qrss.u = x_sol(1);
             qrss.y = obj.SimpleModel.CalcG(qrss.x, qrss.u, []);
             qrss.BatteryOCV = obj.V_OCV_pack(q_bar);
@@ -660,6 +687,51 @@ classdef QuadRotor < System
             end
             
             obj.flight_time = flight_time;
+        end
+        
+        function [range, speed, flight_time, theta_0] = Range(obj, theta_0, opts)
+            % Calculates Range as a function of Pitch angle theta_0 < 0
+            % if no pitch angle is specified, the optimal pitch is 
+            % calculated with fminbnd
+            arguments
+               obj
+               theta_0 double = []
+               opts.DisplayWarnings = false
+            end
+            
+            theta_0_range = [-pi/2 0]; % Pitch angle can range from -90deg to 0deg
+            if isempty(theta_0)
+                [theta_0] = fminbnd(@(t) -calcRange(obj,t,false), theta_0_range(1),theta_0_range(2));
+            else
+                assert(theta_0 >= theta_0_range(1) && theta_0 <= theta_0_range(2), "Pitch angle can range from -90deg to 0deg");
+            end
+            [range, speed, flight_time] = calcRange(obj, theta_0, opts.DisplayWarnings);
+            
+            function [range, speed, flight_time] = calcRange(obj, theta_0, warn_flag)
+                T_hover = obj.HoverThrust(); % m*g
+                rho = obj.rho;
+                Cd = obj.DragCoefficient;
+                S = obj.ReferenceAreaVector();
+                u = [cos(theta_0); 0; sin(theta_0)]; % unit vector of relative velocity in the body frame
+                
+                speed = sqrt((-2*T_hover*tan(theta_0)) / (rho * Cd * abs(dot(S,u))));
+                T_trim = T_hover*sec(theta_0);
+                
+                try
+                    qrs = obj.calcSteadyState([], T_trim);
+                    cap = obj.BattCap(); % A*s
+                    ave_current = qrs.BusCurrent;
+                    flight_time = cap/ave_current;
+
+                    range = speed*flight_time;
+                catch ME
+                    if warn_flag
+                        disp( getReport( ME, 'extended', 'hyperlinks', 'on' ) )
+                    end
+                    flight_time = NaN;
+                    range = NaN;
+                end
+            end
         end
         
         function pd = get.PerformanceData(obj)
