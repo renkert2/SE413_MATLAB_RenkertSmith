@@ -9,10 +9,11 @@ classdef Optimization_ATC < handle
         OptiVars (:,1) optiVar
         
         MinThrustRatio double = 2
+        MaximumMass double = 1
     end
     
     methods
-        function obj = Optimization_ATC()
+        function obj = Optimization_ATC(qr)
             if nargin == 0
                 load QROpt.mat QROpt;
                 qr = QROpt;
@@ -36,7 +37,7 @@ classdef Optimization_ATC < handle
             motor = obj.QR.Motor;
             
             % Set Optimization Variables
-            OV(1) = optiVar("D", obj.propAeroFit.Boundary.X_mean(1), obj.propAeroFit.Boundary.X_lb(1), 0.35);
+            OV(1) = optiVar("D", obj.propAeroFit.Boundary.X_mean(1), obj.propAeroFit.Boundary.X_lb(1), obj.propAeroFit.Boundary.X_ub(1));
             OV(1).Description = "Diameter";
             OV(1).Unit = "m";
             OV(1).Parent = prop;
@@ -50,31 +51,25 @@ classdef Optimization_ATC < handle
             OV(3).Description = "Parallel Cells";
             OV(3).Parent = batt;
             
-            OV(4) = optiVar("N_s", 3, 1, 12);
-            OV(4).Description = "Series Cells";
-            OV(4).Parent = batt;
-            OV(4).Value = 6;
-            OV(4).Enabled = false; % Higher voltages are always best
+            OV(4) = optiVar("Kt", 0.01, 1e-6, 10); % Check These
+            OV(4).Description = "Torque Constant";
+            OV(4).Unit = "N*m/A";
+            OV(4).Parent = motor;
             
-            OV(5) = optiVar("Kt", 0.01, 1e-6, 10); % Check These
-            OV(5).Description = "Torque Constant";
-            OV(5).Unit = "N*m/A";
+            OV(5) = optiVar("Rm",0.01,1e-6,10); % Check These
+            OV(5).Description = "Phase Resistance";
+            OV(5).Unit = "Ohm";
             OV(5).Parent = motor;
             
-            OV(6) = optiVar("Rm",0.01,1e-6,10); % Check These
-            OV(6).Description = "Phase Resistance";
-            OV(6).Unit = "Ohm";
+            OV(6) = optiVar("Mm", 0.01, 1e-6, 10);
+            OV(6).Description = "Motor Mass";
+            OV(6).Unit = "Kg";
             OV(6).Parent = motor;
-            
-            OV(7) = optiVar("Mm", 0.01, 1e-6, 10);
-            OV(7).Description = "Motor Mass";
-            OV(7).Unit = "Kg";
-            OV(7).Parent = motor;
 
             obj.OptiVars = OV';
         end
 
-        function [X_opt_s, opt_flight_time, output] = Optimize(obj,opts)
+        function [X_opt_s, opt_flight_time, exitflag, lambda] = Optimize(obj,opts)
             arguments
                 obj
                 opts.FlightTimeOpts cell = {}
@@ -97,7 +92,7 @@ classdef Optimization_ATC < handle
             lb = LB(obj.OptiVars);
             ub = UB(obj.OptiVars);
 
-            [X_opt_s, fval, ~, output] = fmincon(@objfun ,x0, [], [], [], [], lb, ub, @nlcon, optimopts);
+            [X_opt_s, fval, exitflag, ~, lambda] = fmincon(@objfun ,x0, [], [], [], [], lb, ub, @nlcon, optimopts);
             opt_flight_time = -fval;
             
             % Set Current Values to Optimal Value in OptiVars
@@ -114,7 +109,7 @@ classdef Optimization_ATC < handle
                 X = XAll(obj.OptiVars,X_s); % Unscale and return all
                 try
                     obj.updateParamVals(X);
-                    ft = -obj.QR.flightTime('SimulationBased',false, opts.FlightTimeOpts{:});
+                    ft = -obj.QR.flightTime();
                     
 %                     Y_bar_q = X(find(obj.OptiVars, ["Kt", "Rm", "Mm"]));
 %                     c_q = Y_bar_q - Y_bar_m;
@@ -128,18 +123,22 @@ classdef Optimization_ATC < handle
             end
             
             function [c,ceq] = nlcon(X_s)
-                X = XAll(obj.OptiVars,X_s); % Unscale and return all values
-                % Boundary Objectives
-                c_1 = distToBoundary(obj.propAeroFit.Boundary, X(find(obj.OptiVars, ["D", "P"])));
+                X = XAll(obj.OptiVars,X_s); % Unscale and return all values                
                 
                 try
                     obj.updateParamVals(X);
+                    % Constraint 1: D,P In Valid Region
+                    c_1 = distToBoundary(obj.propAeroFit.Boundary, X(find(obj.OptiVars, ["D", "P"])));
+                    % Constraint 2: Thrust Ratio Constraint
                     c_2 = (obj.MinThrustRatio - obj.QR.calcThrustRatio());
+                    % Constraint 3: Mass Constraint
+                    c_3 = obj.QR.Mass() - obj.MaximumMass; 
+                    
+                    c = [c_1;c_2;c_3];
                 catch
-                    c_2 = NaN;
+                    c = NaN(3,1);
                 end
                 
-                c = [c_1;c_2];
                 ceq = [];
             end
         end
@@ -157,9 +156,8 @@ classdef Optimization_ATC < handle
             [M_prop,J_prop] = calcMassProps(obj.propMassFit, D_prop);
                    
             %X_batt = [N_p; N_s]
-            X_batt = X(find(obj.OptiVars, ["N_p", "N_s"]));
+            X_batt = X(find(obj.OptiVars, ["N_p"]));
             N_p_batt = X_batt(1);
-            N_s_batt = X_batt(2);
             
             %X_motor = [Kt; Rm, Mm]
             X_motor = X(find(obj.OptiVars, ["Kt", "Rm", "Mm"]));
@@ -172,7 +170,6 @@ classdef Optimization_ATC < handle
             
             % Battery
             QR.Battery.N_p.Value = N_p_batt;
-            QR.Battery.N_s.Value = N_s_batt;
             
             % Prop
             QR.Propeller.D.Value = D_prop;

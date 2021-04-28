@@ -5,24 +5,15 @@ classdef PMSMMotor < Component
     properties
         L {mustBeParam} = 1.17e-4 % Inductance - H
         J {mustBeParam} = compParam('J', 6.5e-6, 'AutoRename', true, 'Tunable', true, 'Unit', "kg*m^2") % Mechanical rotational inertia - Modified to better reflect Ferry's simulation results
-        kV {mustBeParam} = compParam('kV', 900, 'AutoRename', true, 'Tunable', true, 'Unit', "RPM/V") % Torque/Speed Coefficient - Nm/A = Vs/rad
+        K_t {mustBeParam} = compParam('K_t', 0.01, 'AutoRename', true, 'Tunable', true, 'Unit', "Nm/A") % Torque/Speed Coefficient - Nm/A = Vs/rad
         Rm {mustBeParam} = compParam('Rm',0.117, 'AutoRename', true, 'Tunable', true, 'Unit', "Ohm") % Phase Resistance - Ohms
+        
         B_v {mustBeParam} = 0 % Viscous Friction - N*m*s
         T_c {mustBeParam} = 0 % Coulomb Friction
         sigmoid_a_param {mustBeParam} = 10 % Parameter used to approximate sign function with sigmoid function sig(w) = 2/(1+Exp(-a*w))-1
         
         M {mustBeParam} = extrinsicProp('Mass',0.04, 'AutoRename', true, 'Tunable', true, 'Unit', "kg");
         D {mustBeParam} = compParam('D', 0.05, 'AutoRename', true, 'Tunable', true, 'Unit', "m")
-    end
-    
-    properties (Dependent)
-       K_t 
-    end
-    
-    methods
-        function K_t = get.K_t(obj)
-            K_t = obj.kVToKt(obj.kV);
-        end
     end
     
     methods (Static)
