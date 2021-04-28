@@ -3,14 +3,26 @@ classdef PMSMMotor < Component
     %   Default parameters from Ferry 2017 - 'Quadcopter Plant Model and Control System Development With MATLAB/Simulink Implementation'
     
     properties
-        M {mustBeParam} = 0.04;
         L {mustBeParam} = 1.17e-4 % Inductance - H
-        J {mustBeParam} = 6.5e-6 % Mechanical rotational inertia - Modified to better reflect Ferry's simulation results
-        K_t {mustBeParam} = 0.00255 % Torque/Speed Coefficient - Nm/A
-        R_1 {mustBeParam} = 0.117 % Phase Resistance - Ohms
-        B_v {mustBeParam} = 2.415e-6 % Viscous Friction - N*m*s
+        J {mustBeParam} = compParam('J', 6.5e-6, 'AutoRename', true, 'Tunable', true, 'Unit', "kg*m^2") % Mechanical rotational inertia - Modified to better reflect Ferry's simulation results
+        kV {mustBeParam} = compParam('kV', 900, 'AutoRename', true, 'Tunable', true, 'Unit', "RPM/V") % Torque/Speed Coefficient - Nm/A = Vs/rad
+        Rm {mustBeParam} = compParam('Rm',0.117, 'AutoRename', true, 'Tunable', true, 'Unit', "Ohm") % Phase Resistance - Ohms
+        B_v {mustBeParam} = 0 % Viscous Friction - N*m*s
         T_c {mustBeParam} = 0 % Coulomb Friction
         sigmoid_a_param {mustBeParam} = 10 % Parameter used to approximate sign function with sigmoid function sig(w) = 2/(1+Exp(-a*w))-1
+        
+        M {mustBeParam} = extrinsicProp('Mass',0.04, 'AutoRename', true, 'Tunable', true, 'Unit', "kg");
+        D {mustBeParam} = compParam('D', 0.05, 'AutoRename', true, 'Tunable', true, 'Unit', "m")
+    end
+    
+    properties (Dependent)
+       K_t 
+    end
+    
+    methods
+        function K_t = get.K_t(obj)
+            K_t = obj.kVToKt(obj.kV);
+        end
     end
     
     methods (Static)
@@ -18,6 +30,25 @@ classdef PMSMMotor < Component
             % P - Total number of poles - not pole pairs
             % lambda_m - Magnetic Flux Linkage
             K_t = (P/2)*lambda_m;
+        end
+        
+        function K_t = kVToKt(kV)
+            % Convert kV in rpm/V to torque constant Kt in N*m/A = V/(rad/s)
+            kV_radps = kV*(2*pi)/60;
+            K_t = 1./kV_radps;
+        end
+        
+        function kV = KtTokV(Kt)
+            kV_radps = 1./Kt;
+            kV =kV_radps/((2*pi)/60);
+        end
+        
+        function J = calcInertia(M,D)
+            % Estimate mass of rotor as M/2;
+            % R = D/2;
+            % J = MR^2 (Hoop moment of inertia)
+            
+            J = (M/2).*(D/2).^2;
         end
     end
     
@@ -32,12 +63,12 @@ classdef PMSMMotor < Component
             PF(2) = Type_PowerFlow('xt^2');
             
             syms xt
-            sig = 2/(1+exp(-obj.sigmoid_a_param.*xt))-1;
+            sig = 2/(1+exp(-1*obj.sigmoid_a_param.*xt))-1;
             PF(3) = Type_PowerFlow(sig*xt);
             
             % Vertices
-            V(1) = GraphVertex_Internal('Description', "Inductance (i_q)", 'Capacitance', C(1), 'Coefficient', obj.L, 'Initial', 0, 'VertexType', 'Current');
-            V(2) = GraphVertex_Internal('Description', "Inertia (omega_m)", 'Capacitance', C(1), 'Coefficient', obj.J, 'Initial', 0, 'VertexType', 'AngularVelocity');
+            V(1) = GraphVertex_Internal('Description', "Inductance (i_q)", 'Capacitance', C(1), 'Coefficient', 1*obj.L, 'Initial', 0, 'VertexType', 'Current');
+            V(2) = GraphVertex_Internal('Description', "Inertia (omega_m)", 'Capacitance', C(1), 'Coefficient', 1*obj.J, 'Initial', 0, 'VertexType', 'AngularVelocity');
             
             V(3) = GraphVertex_External('Description', "Input Voltage (v_q)", 'VertexType', 'Voltage');
             V(4) = GraphVertex_External('Description', "Mechanical Load (T_l)", 'VertexType', 'Torque');
@@ -66,13 +97,13 @@ classdef PMSMMotor < Component
             
             E(4) = GraphEdge_Internal(...
                 'PowerFlow',PF(2),...
-                'Coefficient',obj.R_1,...
+                'Coefficient',1*obj.Rm,...
                 'TailVertex',V(1),...
                 'HeadVertex',V(5));
             
             E(5) = GraphEdge_Internal(...
                 'PowerFlow',[PF(2) PF(3)],...
-                'Coefficient',[obj.B_v obj.T_c],...
+                'Coefficient',[1*obj.B_v 1*obj.T_c],...
                 'TailVertex',V(2),...
                 'HeadVertex',V(5));
                        
@@ -84,9 +115,6 @@ classdef PMSMMotor < Component
             p(2) = ComponentPort('Description',"Torque Output",'Element',E(3));
             p(3) = ComponentPort('Description',"Heat Sink",'Element',V(5));
             obj.Ports = p;
-            
-            % Extrinsic Props
-            obj.extrinsicProps = extrinsicProp("Mass", obj.M);
         end
     end
 end

@@ -1,26 +1,53 @@
 classdef QuadRotor < System
     properties
-        StandardEmptyWeight = extrinsicProp('Mass', 0.284 - 0.080 - 4*0.008 - 4*0.04) % Mass Not Including Battery, Propellers, and Motors.  Those are added later
-        
         K_PI_speed % Inner Rotor Speed Loop controller Gains
         K_PD_vel % Outer Height Loop controller Gains
         K_P_height % Outer Velocity Loop controller gains
+        
+        rho double = 1.205 % Air Density - kg/m^3
+        Height double = 0.1 % Approximate Height of the quadrotor in m, used to estimate drag
+        DragCoefficient double = 1.2
     end
     
     properties (SetAccess = private)
         SymVars SymVars
-        SymParams SymParams
         
         SimpleModel Model
         LinearDynamicModel LinearModel
         
-        BattCap symQuantity
-        Mass symQuantity
-        HoverThrust symQuantity % Thrust required to hover
-        HoverSpeed symQuantity  % Speed required to hover
-
-        sym_param_vals double
-        SS_QAve QRSteadyState % Steady State at average battery voltage
+        % SymQuantities - Properties that are functions of the QuadRotor
+        % Parameters
+        Mass function_handle
+        BattCap function_handle
+        V_OCV_pack function_handle % Open circuit voltage of the battery pack; function of Q. 
+        HoverThrust function_handle % Thrust required to hover
+        HoverSpeed function_handle  % Speed required to hover
+        RotorSpeed function_handle % Calculates rotor speed as a function of total required thrust
+        
+        % Drag Model Sym Quantities
+        ReferenceAreaVector
+        
+        % Parameter-dependent properties
+        SS_QAve QRState % Steady State at average battery voltage 
+    end
+    
+    properties
+        flight_time double % Expensive calculation is cached
+    end
+    
+    % Easier Access to Components
+    properties (SetAccess = private)
+        Frame Frame
+        Battery Battery
+        DCBus DCBus_CurrentEquivalence
+        Inverter PMSMInverter
+        Motor PMSMMotor
+        Propeller Propeller
+    end
+    
+    properties (Dependent)
+        PerformanceData
+        DesignData
     end
     
     properties (Hidden)
@@ -31,79 +58,101 @@ classdef QuadRotor < System
     methods
         function obj = QuadRotor(p)
             arguments
+                p.Frame Frame = Frame('Name', "Frame");
                 p.Battery Battery = Battery('Name', "Battery");
                 p.DCBus DCBus_CurrentEquivalence = DCBus_CurrentEquivalence('Name', 'Bus', 'N_inputs',1,'N_outputs',4);
                 p.PMSMInverter PMSMInverter = PMSMInverter('Name', "Inverter");
                 p.PMSMMotor PMSMMotor = PMSMMotor('Name', "Motor");
-                p.ShaftCoupler ShaftCoupler = ShaftCoupler('Name', "Shaft");
                 p.Propeller Propeller = Propeller('Name', "Propeller");
             end
+           
+            pmsminverters = Replicate([p.PMSMInverter], 4);
+            pmsminverters = pmsminverters{1};
             
-            replicated_comps = Replicate([p.PMSMInverter, p.PMSMMotor, p.ShaftCoupler, p.Propeller], 4);
-            pmsminverters = replicated_comps{1};
-            pmsmmotors = replicated_comps{2};
-            shaftcouplers = replicated_comps{3};
-            propellers = replicated_comps{4};
+            motorprop = MotorProp('PMSMMotor', p.PMSMMotor, 'Propeller', p.Propeller);
+            motorprops = Replicate(motorprop, 4, 'RedefineChildren', false);
+            motorprops = vertcat(motorprops{:});
+           
             
-            components = [p.Battery, p.DCBus, replicated_comps{:}];
+            % I would love for this to work at some point.
+            % motorprop = MotorProp('PMSMMotor', p.PMSMMotor, 'Propeller', p.Propeller);
+            % pmsminverters = repmat(p.PMSMInverter, 1, 4);
+            % motorprops = repmat(motorprop, 1, 4);
+            
+            Components = [p.Frame; p.Battery; p.DCBus; pmsminverters; motorprops];
             
             ConnectP = {[p.Battery.Ports(1) p.DCBus.Ports(1)]};
             
             for i = 1:4
                 ConnectP{end+1,1} = [pmsminverters(i).Ports(1),p.DCBus.Ports(1+i)];
-                ConnectP{end+1,1} = [pmsminverters(i).Ports(2), pmsmmotors(i).Ports(1)];
-                ConnectP{end+1,1} = [pmsmmotors(i).Ports(2), shaftcouplers(i).Ports(1)];
-                ConnectP{end+1,1} = [shaftcouplers(i).Ports(2), propellers(i).Ports(1)];
+                ConnectP{end+1,1} = [pmsminverters(i).Ports(2), motorprops(i).Ports(1)];
             end
             
-            obj = obj@System(components, ConnectP);
-            obj.extrinsicProps = Combine([obj.extrinsicProps,obj.StandardEmptyWeight]);
+            obj = obj@System("Quad Rotor", Components, ConnectP);
+            obj.Frame = p.Frame;
+            obj.Battery = p.Battery;
+            obj.DCBus = p.DCBus;
+            obj.Inverter = p.PMSMInverter;
+            obj.Motor = p.PMSMMotor;
+            obj.Propeller = p.Propeller;
+            
+            warning('off', 'Control:combination:connect10') % Annoying message from calcControllerGains
             init_post(obj);
         end
         
         function init_post(obj)
             createModel(obj);
-            obj.SymParams = obj.Graph.SymParams;
-            setSymQuantities(obj);
+            setParamQuantities(obj);
             setSimpleModel(obj);
             setLinearDynamicModel(obj);
             setSteadyStateFunc(obj);
             setSteadyStateIOFunc(obj);
-            updateSymParamVals(obj);
+            update(obj);
             calcControllerGains(obj);
         end
-        
-        function updateSymParamVals(obj, sym_param_vals)
-            if nargin == 2
-                assert(numel(sym_param_vals) == obj.SymParams.N, 'Incorrect number of sym param vals');
-                obj.sym_param_vals = sym_param_vals;
-            else
-                obj.sym_param_vals = obj.SymParams.Vals;
-            end
+
+        function update(obj)
             obj.SS_QAve = calcSteadyState(obj);
+            obj.flight_time = [];
         end
         
-        function setSymQuantities(obj)
-            sp = obj.SymParams;
-            SQ = @(s) symQuantity(s,sp); % Wrapper function for brevity
+        function setParamQuantities(obj)
+            p = obj.Params;
+            PF = @(s) matlabFunction(p,s); % Wrapper function for brevity
             
             % Battery Capacity
-            batt = obj.Components(1);
-            obj.BattCap = SQ(batt.Capacity); % A*s
+            batt = obj.Battery;
+            obj.BattCap = PF(batt.Capacity); % A*s
+            
+            % Battery Pack V_OCV
+            obj.V_OCV_pack = matlabFunction(p, batt.V_OCV_pack, {sym('q')});
             
             % Mass
-            mass = getProp(obj.extrinsicProps, 'Mass');
-            obj.Mass = SQ(mass);
+            exps = obj.Params.extrinsicProps;
+            masses = getProp(exps, 'Mass');
+            mass = masses(end);
+            obj.Mass = PF(mass(end));
             
             % Hover Thrust
             hover_thrust = 9.81*mass;
-            obj.HoverThrust = SQ(hover_thrust); % Total Thrust required to hover
-            
+            obj.HoverThrust = PF(hover_thrust); % Total Thrust required to hover
+
             % Hover Speed
-            prop_i = find(arrayfun(@(x) isa(x,'Propeller'), obj.Components),1);
-            prop = obj.Components(prop_i);
+            prop = obj.Propeller;
             hover_speed = prop.calcSpeed(hover_thrust/4);
-            obj.HoverSpeed = SQ(hover_speed);
+            obj.HoverSpeed = PF(hover_speed);
+            
+            % Rotor Speed Function 
+            % - Calculates required rotor speed as a function of total
+            % thrust
+            T_reqd = sym("T_reqd");
+            rotor_speed = prop.calcSpeed(T_reqd/4);
+            obj.RotorSpeed = matlabFunction(p, rotor_speed, {T_reqd});
+            
+            % Reference Area Vector for Drag Model (Weekly Report 5/3/21)
+            h = obj.Height;
+            r = obj.Propeller.D*1;
+            obj.ReferenceAreaVector = PF([2*r*h; 2*r*h; pi*r^2]);
         end
         
         function setSimpleModel(obj)
@@ -114,10 +163,9 @@ classdef QuadRotor < System
             %1.         x1       "Battery"        "Battery SOC"           Abstract
             %2.         x2       "Motor"        "Inductance (i_q)"      Current
             %3.         x3       "Motor"        "Inertia (omega_m)"     AngularVelocity
-            %4.         x10      "Shaft"        "Torque (T)"            Torque
-            %5.         x14      "Propeller"    "Inertia (omega)"       AngularVelocity
-            states = [1,2,3,10,14];
-            simple_model.StateDescriptions = ["Battery SOC"; "Motor Current"; "Motor Velocity"; "Shaft Torque"; "Propeller Speed"];
+            
+            states = [1,2,3];
+            simple_model.StateDescriptions = ["Battery SOC"; "Motor Current"; "Rotor Speed"];
             simple_model.Nx = numel(states);
             
             % INPUTS
@@ -126,15 +174,17 @@ classdef QuadRotor < System
             
             
             % OUTPUTS:
-            %1-5.  States 1-5
-            %6.  Bus Voltage
-            %7.  Bus Current
-            %8.  Inverter Current (DC)
-            %9.  Inverter Voltage (Q)
-            %10.  Thrust - Total
-            outs = [states 18 19 20 21 28];
+            %1-3.  States 1-3
+            %4.  Bus Voltage
+            %5.  Bus Current
+            %6.  Inverter Current (DC)
+            %7.  Inverter Voltage (Q)
+            %8. Torque
+            %9. Thrust - Total
+  
+            outs = [states 10 11 12 13 21 20];
             simple_model.Ny = numel(outs);
-            simple_model.OutputDescriptions = [simple_model.StateDescriptions; "Bus Voltage"; "Bus Current"; "Inverter Current (DC)"; "Inverter Voltage (q)"; "Total Thrust"];
+            simple_model.OutputDescriptions = [simple_model.StateDescriptions; "Bus Voltage"; "Bus Current"; "Inverter Current (DC)"; "Inverter Voltage (q)"; "Torque"; "Total Thrust"];
             
             obj.SymVars = SymVars('Nx', simple_model.Nx, 'Nd', simple_model.Nd, 'Nu', simple_model.Nu);
             
@@ -149,7 +199,7 @@ classdef QuadRotor < System
             g_sym_mod(end) = g_sym_mod(end)*4; % Convert Thrust per Propeller to Total Thrust
             simple_model.g_sym = combine(g_sym_mod); % combine makes sym expression a bit simpler
             
-            simple_model.SymParams = obj.SymParams;
+            simple_model.Params = obj.Params;
             simple_model.SymVars = obj.SymVars;
             
             simple_model.init();
@@ -163,7 +213,7 @@ classdef QuadRotor < System
             % Cut Battery Dynamics out of Dynamic Model
             x_mod = obj.SymVars.x(2:end);
             f_sym_mod = obj.SimpleModel.f_sym(2:end);
-            g_sym_mod = obj.SimpleModel.g_sym([5,end]);
+            g_sym_mod = obj.SimpleModel.g_sym([3,end]);
             
             A = jacobian(f_sym_mod, x_mod);
             B = jacobian(f_sym_mod, u_mod);
@@ -172,19 +222,20 @@ classdef QuadRotor < System
             D = jacobian(g_sym_mod, u_mod);
             
             lm = LinearModel();
-            lm.Nx = 4;
+            lm.Nx = 2;
             lm.Nu = 1;
-            lm.Nd = 0;
-            lm.Ny = 1;
+            lm.Nd = 1; % Treat battery SOC as disturbance
+            lm.Ny = 2;
             lm.StateDescriptions = obj.SimpleModel.StateDescriptions(2:end);
             lm.InputDescriptions = obj.SimpleModel.InputDescriptions;
-            lm.OutputDescriptions = obj.SimpleModel.OutputDescriptions([5,end]);
-            sp = copy(obj.SimpleModel.SymParams);
-            sp.prepend(symParam('x1',1));
-            lm.SymParams = sp;
+            lm.DisturbanceDescriptions = "Battery SOC";
+            lm.OutputDescriptions = obj.SimpleModel.OutputDescriptions([3,end]);
             sv = obj.SimpleModel.SymVars;
             sv.x = sv.x(2:end);
+            sv.d = sym('x1');
             lm.SymVars = sv;
+            p = [obj.Params];
+            lm.Params = p;
             
             lm.A_sym = A;
             lm.B_sym = B;
@@ -201,45 +252,48 @@ classdef QuadRotor < System
         end
         
         function setSteadyStateFunc(obj)
-            solve_vars = [sym('u1'); sym('x2'); sym('x3'); sym('x4')];
-            subs_vars = [sym('x1'); sym('x5')];
-            sp_vars = obj.SymParams.Syms;
+            solve_vars = [sym('u1'); sym('x2')];
+            subs_vars = [sym('x1'); sym('x3')];
             
-            vars = {solve_vars, subs_vars, sp_vars};
+            args = {solve_vars, subs_vars};
             
-            obj.SteadyState_func = matlabFunction(obj.SimpleModel.f_sym(2:end),'Vars',vars);
+            obj.SteadyState_func = matlabFunction(obj.Params, obj.SimpleModel.f_sym(2:end), args);
         end
         
         function setSteadyStateIOFunc(obj)
-            solve_vars = [sym('x2'); sym('x3'); sym('x4'); sym('x5')];
+            solve_vars = [sym('x2'); sym('x3')];
             subs_vars = [sym('u1'); sym('x1')];
-            sp_vars = obj.SimpleModel.SymParams.Syms;
             
-            vars = {solve_vars, subs_vars, sp_vars};
+            args = {solve_vars, subs_vars};
             
-            obj.SteadyStateIO_func = matlabFunction(obj.SimpleModel.f_sym(2:end),'Vars',vars);
+            obj.SteadyStateIO_func = matlabFunction(obj.Params, obj.SimpleModel.f_sym(2:end),args);
         end
         
-        function qrss = calcSteadyState(obj, q_bar, opts)
-            % Calculates steady-state values at hover, returns QRSteadyState object
+        function qrss = calcSteadyState(obj, q_bar, T_reqd, opts)
+            % Calculates steady-state values of the powertrain model at thrust T_reqd, returns QRSteadyState object
             % Default value for q_bar is the average battery soc
+            % Default value fot T_reqd is the HoverThrust
             
             arguments
                 obj
                 q_bar double = [];
+                T_reqd double = [];
                 opts.SolverOpts struct = optimset('Display','off');
             end
             
             if isempty(q_bar)
-                q_bar = obj.Components(1).Averaged_SOC;
+                q_bar = obj.Battery.Averaged_SOC;
             end
             
-            sym_param_vals = obj.sym_param_vals;
+            if isempty(T_reqd)
+                rotor_speed = obj.HoverSpeed();
+            else
+                rotor_speed = obj.RotorSpeed(T_reqd);
+            end
             
-            hover_speed = double(obj.HoverSpeed, sym_param_vals);
             
-            x0 = [0.5; 1; hover_speed; 0.01];
-            [x_sol, ~, exit_flag] = fsolve(@(x) obj.SteadyState_func(x,[q_bar;hover_speed],sym_param_vals), x0, opts.SolverOpts);
+            x0 = [0.5; 1];
+            [x_sol, ~, exit_flag] = fsolve(@(x) obj.SteadyState_func(x,[q_bar;rotor_speed]), x0, opts.SolverOpts);
             if exit_flag <= 0
                 error('No solution found');
             elseif x_sol(1) > 1
@@ -248,14 +302,15 @@ classdef QuadRotor < System
                 error('No valid solution.  Required input must be positive');
             end
             
-            qrss = QRSteadyState();
+            qrss = QRState();
             qrss.q = q_bar;
-            qrss.x = [q_bar; x_sol(2:end); hover_speed];
+            qrss.x = [q_bar; x_sol(2:end); rotor_speed];
             qrss.u = x_sol(1);
-            qrss.y = obj.SimpleModel.CalcG(qrss.x, qrss.u, [], sym_param_vals);
+            qrss.y = obj.SimpleModel.CalcG(qrss.x, qrss.u, []);
+            qrss.BatteryOCV = obj.V_OCV_pack(q_bar);
         end
         
-        function [T,x_sol,y_sol] = calcSteadyStateIO(obj,u,q, opts)
+        function qrss = calcSteadyStateIO(obj, u, q, opts)
             % Calculates steady-state thrust given input u, battery SOC q
             % Default value for q is average battery soc
             
@@ -267,23 +322,27 @@ classdef QuadRotor < System
             end
             
             if isempty(q)
-                q = obj.Components(1).Averaged_SOC;
+                q = getComponents(obj,'Battery').Averaged_SOC;
             end
             
-            sym_param_vals = obj.sym_param_vals;
+            hover_speed = obj.HoverSpeed(); % Just used for initialization.
             
-            hover_speed = double(obj.HoverSpeed, sym_param_vals);
-            
-            x0 = [1; hover_speed; 0.01; hover_speed];
-            [x_sol, ~, exit_flag] = fsolve(@(x) obj.SteadyStateIO_func(x,[u;q],sym_param_vals), x0, opts.SolverOpts);
+            x0 = [1; hover_speed];
+            [x_sol, ~, exit_flag] = fsolve(@(x) obj.SteadyStateIO_func(x,[u;q]), x0, opts.SolverOpts);
             if exit_flag <= 0
                 error('No solution found');
             end
             
             x_sol = [q; x_sol];
             u_sol = u;
-            y_sol = obj.SimpleModel.CalcG(x_sol, u_sol, [], sym_param_vals);
-            T = y_sol(end);
+            y_sol = obj.SimpleModel.CalcG(x_sol, u_sol, []);
+            
+            qrss = QRState();
+            qrss.q = q;
+            qrss.x = x_sol;
+            qrss.u = u_sol;
+            qrss.y = y_sol;
+            qrss.BatteryOCV = obj.V_OCV_pack(q);
         end
         
         function u_bar_func = calcSteadyStateInputFunc(obj, opts)
@@ -305,46 +364,11 @@ classdef QuadRotor < System
         end
         
         function tr = calcThrustRatio(obj)
-            T_max = calcSteadyStateIO(obj, 1);
-            T_hover = double(obj.HoverThrust, obj.sym_param_vals);
+            qrsio = calcSteadyStateIO(obj, 1);
+            T_max = qrsio.TotalThrust;
+            T_hover = obj.HoverThrust();
             
             tr = T_max / T_hover;
-        end
-        
-        function [eta,P] = calcEfficiency(obj,u,q)
-            % Define x_power as the power output from that component
-            % input_power is chemical power from battery
-            
-            arguments
-                obj
-                u double = []
-                q double = []
-            end
-            
-            if isempty(u)
-                y = obj.SS_QAve.y;
-            else
-                [~,~,y] = obj.calcSteadyStateIO(u,q);
-            end
-
-            bus_power = y(6).*y(7); % bus voltage (DC) * bus current (DC)
-            inv_power = 4*y(9).*y(2); % inverter voltage (q) * motor_current (q)
-            motor_power = 4*y(3).*y(4);
-            
-            inv_eta = inv_power ./ bus_power;
-            motor_eta = motor_power ./ inv_power;
-            
-            sys_eta= inv_eta*motor_eta;
-            
-            eta = struct();
-            eta.Inverter = inv_eta;
-            eta.Motor = motor_eta;
-            eta.Sys = sys_eta;
-            
-            P = struct();
-            P.Bus = bus_power;
-            P.Inverter = inv_power;
-            P.Motor = motor_power;
         end
         
         function [A,B,C,D] = calcLinearMatrices(obj, qrss)
@@ -352,11 +376,11 @@ classdef QuadRotor < System
                 qrss = obj.SS_QAve;
             end
             
-            [A,B,~,C,D,~] = CalcMatrices(obj.LinearDynamicModel,qrss.x(2:end),qrss.u,[],[qrss.x(1); obj.sym_param_vals]);
+            [A,B,~,C,D,~] = obj.LinearDynamicModel.CalcMatrices(qrss.x(2:end), qrss.u, qrss.x(1));
         end
         
         function [A,B,C,D] = calcBodyModel(obj)
-            m = double(obj.Mass, obj.sym_param_vals);
+            m = obj.Mass();
             
             A = [0 1;0 0];
             B = [0; 1/m];
@@ -418,7 +442,7 @@ classdef QuadRotor < System
             obj.K_P_height = K_P_height;
         end
         
-        function [t_out, y_out, x_g_out, errFlag] = Simulate(obj, r, opts)
+        function [t_out, y_out, q_out, errFlag, state_out] = Simulate(obj, r, opts)
             arguments
                 obj
                 r function_handle = (@(t) t>=0)
@@ -435,7 +459,6 @@ classdef QuadRotor < System
 
             % init
             model = obj.SimpleModel;
-            sym_param_vals = obj.sym_param_vals;
             qrss = obj.calcSteadyState(1); % Calc steady state at full battery
             
             % Indices in composite x = [x_g; x_b; x_sc; x_hc; x_r]
@@ -456,8 +479,8 @@ classdef QuadRotor < System
             N_states = i_x_r(end);
             
             % Graph Model (PowerTrain)
-            f_g = @(x_g,u_g) model.CalcF(x_g, u_g, [], sym_param_vals);
-            g_g = @(x_g,u_g) model.CalcG(x_g, u_g, [], sym_param_vals);
+            f_g = @(x_g,u_g) model.CalcF(x_g, u_g, []);
+            g_g = @(x_g,u_g) model.CalcG(x_g, u_g, []);
             
             % Body Model
             % Computes states [y diff(y)]
@@ -491,10 +514,10 @@ classdef QuadRotor < System
             g_r_1 = @(x_r) 1/tau.*x_r;
             
             % Nominal Thrust
-            T_bar = qrss.y(end);
+            T_bar = qrss.TotalThrust;
             
             if opts.FeedForwardW
-                w_bar = qrss.y(5);
+                w_bar = qrss.RotorSpeed;
             else
                 w_bar = 0;
             end
@@ -517,18 +540,38 @@ classdef QuadRotor < System
             tic
             [t_out,x_out] = ode23tb(@(t,x) f_sys_cl(t,x), [0 opts.MaxSimTime], x_0, sim_opts);
             
-            % Process Results
-            x_g_out = x_out(:,i_x_g);
+            % Process Minimal Results
             x_b_out = x_out(:,i_x_b);
-            x_r_out = x_out(:,i_x_r);
-            
             y_out = x_b_out(:,1);
+            q_out = x_out(:, i_x_g(1));
+            
+            if nargout > 4 || opts.PlotResults
+                % Process additional results
+                x_g_out = x_out(:,i_x_g);
+                x_r_out = x_out(:,i_x_r);                
+                
+                % Calculate the input and model outputs at each time
+                u_g = zeros(obj.SimpleModel.Nu, numel(t_out));
+                y_state = zeros(obj.SimpleModel.Ny, numel(t_out));
+                
+                for i = 1:numel(t_out)
+                    [~,u_g(:,i)] = f_sys_cl(t_out(i), x_out(i,:)');
+                    y_state(:,i) = obj.SimpleModel.CalcG(x_g_out(i,:)', u_g(:,i), []);
+                end
+
+                state_out = QRState();
+                state_out.x = x_g_out';
+                state_out.u =  u_g;
+                state_out.y = y_state;
+                q = state_out.BatterySOC;
+                state_out.BatteryOCV = arrayfun(@(x) obj.V_OCV_pack(x), q);
+            end
             
             if opts.PlotResults
                 plotResults()
             end
             
-            function x_dot = f_sys_cl(t,x)
+            function [x_dot, u_g] = f_sys_cl(t,x)
                 x_g = x(i_x_g);
                 x_b = x(i_x_b);
                 x_sc = x(i_x_sc);
@@ -549,7 +592,7 @@ classdef QuadRotor < System
                 dot_x_vc = f_vc(x_vc, u_vc);
                 y_vc = g_vc(x_vc, u_vc);
                 
-                u_sc = (y_vc - x_g(5)) + w_bar; % Propeller Speed error signal, essentially an acceleration command
+                u_sc = (y_vc - x_g(3)) + w_bar; % Propeller Speed error signal, essentially an acceleration command
                 dot_x_sc = f_sc(x_sc, u_sc);
                 y_sc = g_sc(x_sc, u_sc); % Output of PI Speed Controller is input to Graph (PowerTrain) Model
                 
@@ -564,6 +607,7 @@ classdef QuadRotor < System
                 
                 x_dot = [dot_x_g; dot_x_b; dot_x_sc; dot_x_vc; dot_x_r];
             end
+            
             function [value, isterminal, direction] = emptyBattery(~,y)
                 % emptyBattery() is an event that terminates the simulation
                 % when the battery SOC drains to zero.
@@ -571,7 +615,10 @@ classdef QuadRotor < System
                 isterminal = 1;
                 direction = 0;
             end
+            
             function status = odeFunc(~,~,flag)
+                % Output function that stops the simulation if it takes too long.
+                % Could also use this for fun visualizations :)
                 status = 0;
                 if isempty(flag)
                     timer = opts.Timeout - toc;
@@ -582,11 +629,12 @@ classdef QuadRotor < System
                     end
                 end
             end
+            
             function plotResults()
                 f = figure;
                 f.Position = [207.4000 311.4000 1.1016e+03 384.8000];
                 subplot(1,2,1)
-                plot(t_out, [r(t_out), g_r_1(x_r_out),y_out]);
+                plot(t_out, [r(t_out), g_r_1(x_r_out), y_out]);
                 xlim([0 25])
                 lg = legend(["Reference", "Filtered Reference", "Response"]);
                 lg.Location = 'southeast';
@@ -614,18 +662,18 @@ classdef QuadRotor < System
                 obj
                 r function_handle = (@(t) t>=0)
                 opts.InterpolateTime logical = false % This didn't help with the smoothness of the response at all.
-                opts.Timeout double = 5
+                opts.Timeout double = 30
                 opts.SimulationBased logical = false
                 opts.SimulationOpts cell = {}
             end
             
             if opts.SimulationBased
-                [t,~,x_g,errFlag] = Simulate(obj, r, 'Timeout', opts.Timeout, 'PlotResults', false, opts.SimulationOpts{:});
+                [t, ~, q, errFlag] = Simulate(obj, r, 'Timeout', opts.Timeout, 'PlotResults', false, opts.SimulationOpts{:});
                 if errFlag
                     flight_time = NaN;
                 else
                     if opts.InterpolateTime
-                        q_ = x_g(end-1:end,1);
+                        q_ = q(end-1:end);
                         t_ = t(end-1:end);
                         a = -q_(1)/(q_(2)-q_(1));
                         flight_time = (1-a)*t_(1) + a*t_(2);
@@ -634,12 +682,73 @@ classdef QuadRotor < System
                     end
                 end
             else
-                cap = double(obj.BattCap,obj.sym_param_vals); % A*s
-                ave_current = obj.SS_QAve.y(7);
+                cap = obj.BattCap(); % A*s
+                ave_current = obj.SS_QAve.y(5);
                 flight_time = cap/ave_current;
-            end    
+            end
+            
+            obj.flight_time = flight_time;
         end
-        %% Helper Functions
+        
+        function [range, speed, flight_time, theta_0] = Range(obj, theta_0, opts)
+            % Calculates Range as a function of Pitch angle theta_0 < 0
+            % if no pitch angle is specified, the optimal pitch is 
+            % calculated with fminbnd
+            arguments
+               obj
+               theta_0 double = []
+               opts.DisplayWarnings = false
+            end
+            
+            theta_0_range = [-pi/2 0]; % Pitch angle can range from -90deg to 0deg
+            if isempty(theta_0)
+                [theta_0] = fminbnd(@(t) -calcRange(obj,t,false), theta_0_range(1),theta_0_range(2));
+            else
+                assert(theta_0 >= theta_0_range(1) && theta_0 <= theta_0_range(2), "Pitch angle can range from -90deg to 0deg");
+            end
+            [range, speed, flight_time] = calcRange(obj, theta_0, opts.DisplayWarnings);
+            
+            function [range, speed, flight_time] = calcRange(obj, theta_0, warn_flag)
+                T_hover = obj.HoverThrust(); % m*g
+                rho = obj.rho;
+                Cd = obj.DragCoefficient;
+                S = obj.ReferenceAreaVector();
+                u = [cos(theta_0); 0; sin(theta_0)]; % unit vector of relative velocity in the body frame
+                
+                speed = sqrt((-2*T_hover*tan(theta_0)) / (rho * Cd * abs(dot(S,u))));
+                T_trim = T_hover*sec(theta_0);
+                
+                try
+                    qrs = obj.calcSteadyState([], T_trim);
+                    cap = obj.BattCap(); % A*s
+                    ave_current = qrs.BusCurrent;
+                    flight_time = cap/ave_current;
+
+                    range = speed*flight_time;
+                catch ME
+                    if warn_flag
+                        disp( getReport( ME, 'extended', 'hyperlinks', 'on' ) )
+                    end
+                    flight_time = NaN;
+                    range = NaN;
+                end
+            end
+        end
+        
+        function pd = get.PerformanceData(obj)
+            pd = PerformanceData();
+            pd.FlightTime = obj.flight_time;
+            pd.ThrustRatio = calcThrustRatio(obj);
+            pd.SteadyState = obj.SS_QAve;
+        end
+        
+        function dd = get.DesignData(obj)
+            dd = exportStruct(obj.Params);
+        end
+    end
+    
+    %% Helper Functions
+    methods (Access = private)
         function syms_out = convertSyms(obj, syms_in)
             syms_out = convertToBalanced(obj,syms_in);
             syms_out = convertStates(obj,syms_out);
@@ -659,18 +768,15 @@ classdef QuadRotor < System
                 from{2} = [sym('x4'), sym('x6'), sym('x8')];
                 to{2} = repmat(sym('x2'),1,3);
                 
-                from{3} = [sym('x11'), sym('x12'), sym('x13')];
-                to{3} = repmat(sym('x10'),1,3);
-                
-                from{4} = [sym('x15'), sym('x16'), sym('x17')];
-                to{4} = repmat(sym('x14'),1,3);
+                from{3} = [sym('x5'), sym('x7'), sym('x9')];
+                to{3} = repmat(sym('x3'),1,3);
             end
             
             sym_bal = subs(sym_unbal,[from{:}], [to{:}]);
         end
         
         function sym_out = convertStates(obj, sym_in)
-            from = [sym('x1'); sym('x2'); sym('x3'); sym('x10'); sym('x14')];
+            from = [sym('x1'); sym('x2'); sym('x3')];
             to = obj.SymVars.x;
             sym_out = subs(sym_in, from,to);
         end

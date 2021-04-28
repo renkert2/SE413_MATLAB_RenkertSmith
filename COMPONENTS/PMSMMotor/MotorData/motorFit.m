@@ -58,30 +58,53 @@ classdef motorFit < handle
             obj.DataTable = table(Diameter,Length,Weight,kV,Rm,Io);
         end
         
-        function createFits(obj)
+        function createFits(obj, opts)
+            
             x_data = [obj.DataTable.kV, obj.DataTable.Rm];
             x_data_filt = x_data(~any(isnan(x_data),2),:);
             obj.x_data = x_data_filt;
             obj.Boundary = Boundary(x_data_filt);
             
+             % Weight Fit
             data = [x_data obj.DataTable.Weight];
             data = data(~any(isnan(data),2),:);
             obj.weight_data = data;
-            ft = fittype( 'loess' );
-            opts = fitoptions( 'Method', 'LowessFit' );
-            opts.Normalize = 'on';
+            
+%             ft = fittype( 'loess' );
+%             opts = fitoptions( 'Method', 'LowessFit' );
+%             opts.Normalize = 'on';
+%             opts.Robust = 'Bisquare';
+%             opts.Span = 0.4;
+
+            ft = fittype( '(a/(x+f))^(d) + (b/(y+g))^(e) + c', 'independent', {'x', 'y'}, 'dependent', 'z' );
+            opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
+            opts.Display = 'Off';
+            opts.Lower = [0 0 0 0 0 0 0];
             opts.Robust = 'Bisquare';
-            opts.Span = 0.4;
+            opts.StartPoint = [0.781043314488573 0.978966203552797 0.845317915312609 0.547008892286345 0.296320805607773 0.7447 0.188955015032545];
+            opts.Upper = [Inf Inf Inf 3 3 0.1 0.1];
+            
             weight_fit = fit(data(:,1:2),data(:,3), ft,opts);
             
-            data = [x_data obj.DataTable.Diameter];
-            data = data(~any(isnan(data),2),:);
-            obj.diam_data = data;
-            ft = fittype( 'loess' );
-            opts = fitoptions( 'Method', 'LowessFit' );
-            opts.Normalize = 'on';
+            % Diam Fit
+             data = [x_data obj.DataTable.Diameter];
+             data = data(~any(isnan(data),2),:);
+             obj.diam_data = data;
+             
+%             ft = fittype( 'loess' );
+%             opts = fitoptions( 'Method', 'LowessFit' );
+%             opts.Normalize = 'on';
+%             opts.Robust = 'Bisquare';
+%             opts.Span = 0.75;
+
+            ft = fittype( '(a/(x+f))^(d) + (b/(y+g))^(e) + c', 'independent', {'x', 'y'}, 'dependent', 'z' );
+            opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
+            opts.Display = 'Off';
+            opts.Lower = [0 0 0 0 0 0 0];
             opts.Robust = 'Bisquare';
-            opts.Span = 0.75;
+            opts.StartPoint = [0.817627708322262 0.794831416883453 0.644318130193692 0.378609382660268 0.811580458282477 0.532825588799455 0.350727103576883];
+            opts.Upper = [Inf Inf Inf 3 3 1000 1];
+
             diam_fit = fit(data(:,1:2),data(:,3), ft,opts);
             
             fits = struct();
@@ -93,7 +116,7 @@ classdef motorFit < handle
     end
     
     methods % Working Methods
-        function [K_t,M,J] = calcMotorProps(obj,varargin)
+        function [M,J,D] = calcMotorProps(obj,varargin)
             if nargin == 2
                 X = varargin{1};
                 kV = X(1,:);
@@ -117,8 +140,6 @@ classdef motorFit < handle
                 warning("Points %s Outside motorFit Boundary", out_str)
             end
             
-            K_t = obj.kVToKt(kV);
-            
             M = obj.Fit.Weight(kV,Rm);
             M = max(min(M,obj.Y_max(1)),obj.Y_min(1));
             
@@ -129,7 +150,7 @@ classdef motorFit < handle
         end
         
         function plotFits(obj)
-            figure(1)
+            figure
             plot(obj.Fit.Weight, obj.weight_data(:,1:2), obj.weight_data(:,3))
             zlim([0 max(obj.weight_data(:,3))])
             title('Motor Mass')
@@ -138,7 +159,7 @@ classdef motorFit < handle
             zlabel('M (kg)')
             
             
-            figure(2)
+            figure
             plot(obj.Fit.Diameter, obj.diam_data(:,1:2), obj.diam_data(:,3))
             zlim([0 max(obj.diam_data(:,3))])
             title('Motor Diameter')

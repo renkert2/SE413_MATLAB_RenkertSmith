@@ -1,4 +1,4 @@
-classdef Optimization_General < handle  
+classdef Optimization_BattProp < handle  
     properties
         quad_rotor QuadRotor
 
@@ -17,7 +17,7 @@ classdef Optimization_General < handle
     end
     
     methods
-        function obj = Optimization_General()
+        function obj = Optimization_BattProp()
             obj.init();
         end
         

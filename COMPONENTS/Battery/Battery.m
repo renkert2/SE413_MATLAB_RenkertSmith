@@ -6,8 +6,8 @@ classdef Battery < Component
     % All parameters specified per cell except for N_series and N_parallel
     
     properties
-        N_p {mustBeParam} = 1 % Number of cells in parallel
-        N_s {mustBeParam} = 3 % Number of cells in series
+        N_p {mustBeParam} = compParam('N_p',1,'AutoRename', true, 'Tunable', true) % Number of cells in parallel
+        N_s {mustBeParam} = compParam('N_s',6, 'AutoRename', true, 'Tunable', true) % Number of cells in series
         Q {mustBeParam} = 14400 % Coulombs
         R_s {mustBeParam} = (10e-3) / 3 % Series Resistance - Ohms - From Turnigy Website
         
@@ -21,6 +21,7 @@ classdef Battery < Component
     properties (Dependent)
         Energy % Joules
         Capacity % Coulombs = 1 A*s
+        V_OCV_pack
     end
     
     properties (SetAccess = private)
@@ -37,6 +38,10 @@ classdef Battery < Component
         
         function C = get.Capacity(obj)
             C = obj.Q*obj.N_p;
+        end
+        
+        function V = get.V_OCV_pack(obj)
+           V = obj.N_s*obj.V_OCV_nominal*obj.V_OCV_curve;
         end
         
         function setV_OCV_curve(obj,arg)
@@ -60,7 +65,7 @@ classdef Battery < Component
         end
     end
     
-    methods (Access = protected)
+    methods
         function init(obj)
             if obj.variableV_OCV
                 if isequal(obj.V_OCV_curve, symfun(1, sym('q')))
@@ -74,8 +79,14 @@ classdef Battery < Component
                 obj.Averaged_SOC = 1; % SOC at which V_OCV(q) = V_OCV_Average
                 obj.Nominal_SOC = 1;
             end
+            
+            mp = extrinsicProp("Mass", obj.Energy*obj.specificEnergy);
+            mp.Parent = obj;
+            obj.Params(end+1,1) = mp;
         end
-        
+    end
+    
+    methods (Access = protected)
         function DefineComponent(obj)
             % Capacitance Types
             C(1) = Type_Capacitance(obj.V_OCV_curve(sym('x'))); % Capacitance Type for Q*V_OCV
@@ -102,9 +113,6 @@ classdef Battery < Component
             % Ports
             p(1) = ComponentPort('Description','Load Current','Element', Vertex(2));
             obj.Ports = p;
-            
-            % extrinsicProps
-            obj.extrinsicProps = extrinsicProp("Mass", obj.Energy*obj.specificEnergy);
         end
     end
      
@@ -127,6 +135,10 @@ classdef Battery < Component
             V_OCV_sym = symfun(poly2sym(p_coeffs, opts.sym_var), opts.sym_var);
             
             digits(digits_old);
+        end
+        
+        function mah = CoulombsTomAh(c)
+            mah = 0.2778*c;
         end
     end
 end

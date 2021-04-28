@@ -8,18 +8,25 @@ classdef MotorProp < System
             end
             
             comps = [opts.pmsmmotor, opts.propeller];
-            obj = obj@System(comps, {});
+            obj = obj@System();
+            obj.Components = comps;
             obj.Name = opts.Name;
+            obj.DefineElement(); % Don't want to modify parameters or children automatically, all defined explicitly below
         end
     end
     
     methods
-        function createSysGraph(obj)
+        function DefineElement(obj)
             Motor = obj.Components(1);
             Prop = obj.Components(2);
             
-            V = Motor.Graph.Vertices;
-            E = Motor.Graph.Edges;
+            V = copy(Motor.Graph.Vertices);
+            E = copy(Motor.Graph.Edges);
+            E(1).TailVertex = V(3); E(1).HeadVertex = V(1); % Edge TailVertices and HeadVertices must be reassigned
+            E(2).TailVertex = V(1); E(2).HeadVertex = V(2);
+            E(3).TailVertex = V(2); E(3).HeadVertex = V(4);
+            E(4).TailVertex = V(1); E(4).HeadVertex = V(5);
+            E(5).TailVertex = V(2); E(5).HeadVertex = V(5);
             
             % Modify Vertices
             V(2).Coefficient = (Motor.J + Prop.J);
@@ -28,8 +35,10 @@ classdef MotorProp < System
             V(4).VertexType = 'Abstract';
             V(4).Parent = obj;
             
+            
+            
             % Modify Edges
-            PF = Type_PowerFlow('xt^3');
+            PF = Type_PowerFlow('xt^3'); % Additional powerflow type for propeller
             E(3).PowerFlow = PF;
             E(3).Coefficient = Prop.square_drag_coeff;
             E(3).Parent = obj;
@@ -37,7 +46,7 @@ classdef MotorProp < System
             
             g = Graph(V, E);
             obj.Graph = g;
-            obj.Graph.Parent = obj;mp
+            obj.Graph.Parent = obj;
             
             % Ouptuts
             syms omega
@@ -54,16 +63,14 @@ classdef MotorProp < System
             obj.Graph.Outputs = O;
             
             % Ports            
-            p = Motor.Ports([1,3]);
+            p(1) = ComponentPort('Description',"Voltage Input",'Element',E(1));
+            p(2) = ComponentPort('Description',"Heat Sink",'Element',V(5));
             obj.Ports = p;
             
-            % Extrinsic Props
-            obj.extrinsicProps = Combine(vertcat(Motor.extrinsicProps, Prop.extrinsicProps));
-            
-            % Sym Params
-            sym_params = join(vertcat(Motor.SymParams, Prop.SymParams));
-            obj.SymParams = sym_params;
-            obj.Graph.SymParams = sym_params;
+            % Params
+            % I'll wait to combine the extrinsic params until the QuadRotor
+            params = unique(vertcat(Motor.Params, Prop.Params));
+            obj.Params = params;
         end
     end
 end

@@ -1,0 +1,1870 @@
+[
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE13218XF-105",
+    "PRICE": 1325.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 105.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.124,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 1.0875,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 150.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 9135.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "22.2 V  - 60.9 V",
+      "Io": {
+        "Value": 3.1,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.013,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 36.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 42.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 6902-2RS/7902C/7202C",
+      "Mount_Pattern": "M5 x 55 mm M6/M5 x 70 mm",
+      "Stator_Class": "13218 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 10.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 9.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 150.2,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 49.2,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 2015.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 35.5\" DP",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE10218XF-105",
+    "PRICE": 842.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 105.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0909,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.5997,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 142.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 7355.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "22.2 V  - 60.9 V",
+      "Io": {
+        "Value": 1.0,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.023,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 24.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 28.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 6902-2RS/7902C/7202C",
+      "Mount_Pattern": "M5 x 55 mm M6/M5 x 70 mm",
+      "Stator_Class": "10218 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 10.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 9.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 109.1,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 49.2,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 1075.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 30.5\"-TP",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE8218XF-120",
+    "PRICE": 615.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 120.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0796,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.4137,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 110.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 5695.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "22.2 V  - 60.9 V",
+      "Io": {
+        "Value": 0.8,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.037,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 24.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 28.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 6901-2RS/7901C/7001C",
+      "Mount_Pattern": "M5 x 40 mm M6/M5 x 55 mm",
+      "Stator_Class": "8218 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 10.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 9.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 89.0,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 49.2,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 760.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 30.5\"-TP (27.5\"-TP Maximum on 14S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE7215XF-135",
+    "PRICE": 383.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 135.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0707,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.2774,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 85.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 4405.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "22.2 V  - 60.9 V",
+      "Io": {
+        "Value": 0.5,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.057,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 24.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 22.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 6900-2RS/6000-2RS",
+      "Mount_Pattern": "M4 x 35 mm M5/M4 x 40 mm",
+      "Stator_Class": "7215 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 10.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 9.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 80.8,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 44.5,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 555.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 30.5\"-TP (24.5\"-DP Maximum on 14S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE7208XF-110",
+    "PRICE": 345.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 110.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0868,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.2099,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 50.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 2225.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "22.2 V  - 52.2 V",
+      "Io": {
+        "Value": 0.4,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.171,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 24.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 28.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 6900-2RS/6000-2RS",
+      "Mount_Pattern": "M4 x 35 mm M5/M4 x 40 mm",
+      "Stator_Class": "7208 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 10.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 9.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 80.0,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 37.5,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 380.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 30.5\"-DP (27.5\"-DP Maximum on 12S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE7208XF-135",
+    "PRICE": 360.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 135.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0707,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.2104,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 58.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 2145.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "22.2 V  - 52.2 V",
+      "Io": {
+        "Value": 0.4,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.113,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 24.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 28.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 6900-2RS/6000-2RS",
+      "Mount_Pattern": "M4 x 35 mm M5/M4 x 40 mm",
+      "Stator_Class": "7208 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 10.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 9.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 80.0,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 37.5,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 380.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 30.5\"-DP (24.5\"-DP Maximum on 12S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE6815XF-205",
+    "PRICE": 350.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 205.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.047,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.2145,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 57.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 3000.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "22.2 V  - 52.2 V",
+      "Io": {
+        "Value": 1.9,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.048,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 24.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 20.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 6900-2RS/6000-2RS",
+      "Mount_Pattern": "M4 x 30 mm M5/M4 x 40 mm",
+      "Stator_Class": "6815 0.2 mm Japanese",
+      "Shaft_Diameter": "NA",
+      "Shaft_Length": "NA",
+      "Motor_Diameter": {
+        "Value": 77.2,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 44.5,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 550.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 24.5\"-TP (21.5\"-TP Maximum on 12S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE6213XF-185",
+    "PRICE": 264.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 185.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0516,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.1924,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 50.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 2755.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "22.2 V  - 52.2 V",
+      "Io": {
+        "Value": 0.6,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.072,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 24.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 28.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 698-2RS/608-2RS",
+      "Mount_Pattern": "M4 x 30 mm M5/M4 x 40 mm",
+      "Stator_Class": "6213 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 5.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 70.0,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 39.0,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 360.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 24.5\"-TP (24.5\"-DP Maximum on 12S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE5215XF-220",
+    "PRICE": 205.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 220.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0434,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.1554,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 44.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 1955.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "22.2 V  - 52.2 V",
+      "Io": {
+        "Value": 0.5,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.078,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 24.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 28.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 698-2RS/608-2RS",
+      "Mount_Pattern": "M4/3 x 30 mm M5 x 40 mm",
+      "Stator_Class": "5215 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 5.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 60.0,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 41.0,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 305.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 21.5\"-TP (21.5\"-DP Maximum on 12S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE5215XF-330",
+    "PRICE": 201.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 330.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0289,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.138,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 62.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 1835.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "14.8 V  - 34.8 V",
+      "Io": {
+        "Value": 0.7,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.044,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 24.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 22.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 698-2RS/608-2RS",
+      "Mount_Pattern": "M4/3 x 30 mm M5 x 40 mm",
+      "Stator_Class": "5215 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 5.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 60.0,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 41.0,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 305.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 21.5\"-TP (18.5\"-TP Maximum on 8S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE5215XF-435",
+    "PRICE": 201.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 435.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.022,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.1247,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 72.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 1595.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "14.8 V  - 34.8 V",
+      "Io": {
+        "Value": 1.4,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.031,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 24.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 22.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 698-2RS/608-2RS",
+      "Mount_Pattern": "M4/3 x 30 mm M5 x 40 mm",
+      "Stator_Class": "5215 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 5.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 60.0,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 41.0,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 305.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 21.5\"-DP (15.5\"-TP Maximum on 8S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE4215XF-465",
+    "PRICE": 153.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 465.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0205,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.0901,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 62.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 1375.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "14.8 V  - 26.1 V",
+      "Io": {
+        "Value": 0.7,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.052,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 24.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 22.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 696ZZ/606ZZ",
+      "Mount_Pattern": "M4/3 x 25 mm M3/2.5 x 32 mm",
+      "Stator_Class": "4215 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 5.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 48.2,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 36.0,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 195.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 18.5\"-TP (18.5\"-DP Maximum on 6S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE4213XF-360",
+    "PRICE": 138.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 360.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0265,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.0932,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 38.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 1125.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "14.8 V  - 34.8 V",
+      "Io": {
+        "Value": 0.4,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.081,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 24.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 28.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 696ZZ/606ZZ",
+      "Mount_Pattern": "M4/3 x 25 mm M3/2.5 x 32 mm",
+      "Stator_Class": "4213 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 5.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 48.2,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 34.0,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 175.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 18.5\"-TP (15.5\"-TP Maximum on 8S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE4014XF-380",
+    "PRICE": 123.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 380.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0251,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.0918,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 36.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 1065.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "14.8 V  - 34.8 V",
+      "Io": {
+        "Value": 0.5,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.075,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 18.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 24.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 685ZZ/625ZZ",
+      "Mount_Pattern": "M4/3 x 25 mm M3/2.5 x 32 mm",
+      "Stator_Class": "4014 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 5.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 46.5,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 32.0,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 160.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 18.5\"-TP (15.5\"-TP Maximum on 8S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE4012XF-400",
+    "PRICE": 118.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 400.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0239,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.0844,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 32.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 945.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "14.8 V  - 34.8 V",
+      "Io": {
+        "Value": 0.5,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.08,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 18.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 24.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 685ZZ/625ZZ",
+      "Mount_Pattern": "M4/3 x 25 mm M3/2.5 x 32 mm",
+      "Stator_Class": "4012 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 5.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 46.5,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 30.0,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 145.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 18.5\"-TP (15.5\"-DP Maximum on 8S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE3520XF-400",
+    "PRICE": 116.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 400.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0239,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.0855,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 45.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 1335.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "14.8 V  - 34.8 V",
+      "Io": {
+        "Value": 0.3,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.078,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 12.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 14.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple MR105ZZ 625ZZ",
+      "Mount_Pattern": "M4/3 x 25 mm M3/2.5 x 32 mm",
+      "Stator_Class": "3520 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 5.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 42.2,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 45.0,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 190.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 18.5\"-TP (15.5\"-TP Maximum on 8S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE3510XF-475",
+    "PRICE": 95.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 475.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0201,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.062,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 30.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 665.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "14.8 V  - 26.1 V",
+      "Io": {
+        "Value": 0.2,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.105,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 12.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 14.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple MR105ZZ 625ZZ",
+      "Mount_Pattern": "M4/3 x 25 mm M3/2.5 x 32 mm",
+      "Stator_Class": "3510 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 5.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 42.2,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 35.0,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 120.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 15.5\"-TP (15.5\"-DP Maximum on 6S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE3510XF-715",
+    "PRICE": 95.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 715.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0134,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.0575,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 45.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 665.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "11.1 V  - 21.8 V",
+      "Io": {
+        "Value": 0.5,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.054,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 12.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 14.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple MR105ZZ 625ZZ",
+      "Mount_Pattern": "M4/3 x 25 mm M3/2.5 x 32 mm",
+      "Stator_Class": "3510 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 5.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 42.2,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 35.0,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 120.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 15.5\"-TP (15.5\"-DP Maximum on 4S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE2814XF-515",
+    "PRICE": 74.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 515.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0185,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.0514,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 24.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 535.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "14.8 V  - 26.1 V",
+      "Io": {
+        "Value": 0.3,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.13,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 12.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 14.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 684ZZ 624ZZ",
+      "Mount_Pattern": "M3 x 25 mm M3/2.5 x 19 mm",
+      "Stator_Class": "2814 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 5.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 35.5,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 31.7,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 95.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 15.5\"-DP (12.5\"-TP Maximum on 6S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE2814XF-775",
+    "PRICE": 74.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 775.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0123,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.0469,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 36.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 535.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "11.1 V  - 21.8 V",
+      "Io": {
+        "Value": 0.5,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.069,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 12.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 14.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 684ZZ 624ZZ",
+      "Mount_Pattern": "M3 x 25 mm M3/2.5 x 19 mm",
+      "Stator_Class": "2814 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 5.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 35.5,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 31.7,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 95.0,
+        "Unit": "g"
+      },
+      "Propeller_Blade_Size": "Up to 15.5\"-DP (12.5\"-TP Maximum on 4S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE2315XF-885",
+    "PRICE": 63.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 885.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0108,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.0303,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 24.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 355.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "11.1 V  - 26.1 V",
+      "Io": {
+        "Value": 0.5,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.127,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 12.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 14.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple MR84ZZ MR104ZZ",
+      "Mount_Pattern": "M3 x 19 mm M2.5 x 16 mm M3 x 16/19 mm",
+      "Stator_Class": "2315 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 3.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 28.3,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 28.5,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 64.0,
+        "Unit": "g"
+      },
+      "Propeller_Size": "Up to 12\" (9\" Maximum on 6S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE2315XF-965",
+    "PRICE": 63.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 965.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0099,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.031,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 26.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 385.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "11.1 V  - 17.4 V",
+      "Io": {
+        "Value": 0.5,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.102,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 12.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 14.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple MR84ZZ MR104ZZ",
+      "Mount_Pattern": "M3 x 19 mm M2.5 x 16 mm M3 x 16/19 mm",
+      "Stator_Class": "2315 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 3.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 28.3,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 28.5,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 64.0,
+        "Unit": "g"
+      },
+      "Propeller_Size": "Up to 12\" (11\" Maximum on 4S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE2315XF-2050",
+    "PRICE": 63.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 2050.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0047,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.0253,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 44.0,
+        "Unit": "A"
+      },
+      "Maximum_Continuous_Power": {
+        "Value": 766.0,
+        "Unit": "W"
+      },
+      "Voltage_Range": "7.4 V  - 17.4 V",
+      "Io": {
+        "Value": 1.3,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.034,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 12.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 14.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple MR84ZZ MR104ZZ",
+      "Mount_Pattern": "M3 x 19 mm M2.5 x 16 mm M3 x 16/19 mm",
+      "Stator_Class": "2315 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 4.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 3.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 28.3,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 28.5,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 64.0,
+        "Unit": "g"
+      },
+      "Propeller_Size": "Up to 8\" (6\" Maximum on 6S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE2306XF-2050",
+    "PRICE": 28.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 2050.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0047,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.0179,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 24.0,
+        "Unit": "A"
+      },
+      "Voltage_Range": "7.4 V  - 26.1 V",
+      "Io": {
+        "Value": 0.6,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.068,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 12.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 14.0,
+        "Unit": ""
+      },
+      "Bearings": "Double 693ZZ 623ZZ",
+      "Mount_Pattern": "M3 x 19 mm M3/M2.5 x 16 mm",
+      "Stator_Class": "2306 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 3.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 3.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 28.3,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 18.0,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 29.0,
+        "Unit": "g"
+      },
+      "Propeller_Size": "Up to 8\" (5\" Maximum on 6S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE2306XF-2550",
+    "PRICE": 28.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 2550.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0037,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.0179,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 34.0,
+        "Unit": "A"
+      },
+      "Voltage_Range": "7.4 V  - 21.8 V",
+      "Io": {
+        "Value": 1.2,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.044,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 12.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 14.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple MR104ZZ MR84ZZ",
+      "Mount_Pattern": "M3 x 19 mm M3 x 16 mm",
+      "Stator_Class": "2306 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 3.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 3.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 28.3,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 18.0,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 29.0,
+        "Unit": "g"
+      },
+      "Propeller_Size": "Up to 8\" (6\" Maximum on 4S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE2304XF-2350",
+    "PRICE": 26.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 2350.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0041,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.0135,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 20.0,
+        "Unit": "A"
+      },
+      "Voltage_Range": "7.4 V  - 21.8 V",
+      "Io": {
+        "Value": 0.7,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.091,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 12.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 14.0,
+        "Unit": ""
+      },
+      "Bearings": "Double 693ZZ 623ZZ",
+      "Mount_Pattern": "M3 x 19 mm M3/M2.5 x 16 mm",
+      "Stator_Class": "2304 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 3.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 3.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 28.3,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 16.0,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 24.0,
+        "Unit": "g"
+      },
+      "Propeller_Size": "Up to 8\" (6\" Maximum on 4S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  },
+  {
+    "MAKE": "KDE",
+    "MODEL": "KDE1806XF-2350",
+    "PRICE": 28.95,
+    "SPECS": {
+      "Kv": {
+        "Value": 2350.0,
+        "Unit": "RPM/V"
+      },
+      "Kt": {
+        "Value": 0.0041,
+        "Unit": "Nm/A"
+      },
+      "Km": {
+        "Value": 0.0119,
+        "Unit": "Nm/sqrt[W]"
+      },
+      "Maximum_Continuous_Current": {
+        "Value": 18.0,
+        "Unit": "A"
+      },
+      "Voltage_Range": "7.4 V  - 17.4 V",
+      "Io": {
+        "Value": 0.4,
+        "Unit": "A"
+      },
+      "Rm": {
+        "Value": 0.117,
+        "Unit": "Ohm"
+      },
+      "Stator_Poles": {
+        "Value": 12.0,
+        "Unit": ""
+      },
+      "Magnetic_Poles": {
+        "Value": 14.0,
+        "Unit": ""
+      },
+      "Bearings": "Triple 682ZZ 692ZZ",
+      "Mount_Pattern": "M3 x 16 mm M2 x 12 mm",
+      "Stator_Class": "1806 0.2 mm Japanese",
+      "Shaft_Diameter": {
+        "Value": 2.0,
+        "Unit": "mm"
+      },
+      "Shaft_Length": {
+        "Value": 3.5,
+        "Unit": "mm"
+      },
+      "Motor_Diameter": {
+        "Value": 23.0,
+        "Unit": "mm"
+      },
+      "Motor_Length": {
+        "Value": 16.7,
+        "Unit": "mm"
+      },
+      "Motor_Weight": {
+        "Value": 18.0,
+        "Unit": "g"
+      },
+      "Propeller_Size": "Up to 7\" (5\" Maximum on 4S)",
+      "Motor_Timing": "22deg - 30deg",
+      "ESC_PWM_Rate": "16 - 32 kHz"
+    }
+  }
+]
