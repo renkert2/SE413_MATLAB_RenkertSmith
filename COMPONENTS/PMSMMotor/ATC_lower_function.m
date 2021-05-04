@@ -1,48 +1,12 @@
-% Reid Smith, Spring 2021
-% Code seeks to take in iinputs Z and use design variables to optimize
-% performance of coupling variables
+function [Y_out] = ATC_lower_function(Z_in,Y_in)
+% Example Usage:
+% Y_in.I_rotor = 100;
+% Y_in.K_tau = 0.005;
+% Y_in.R_phase = 0.13;
+% Y_in.active_mass = 0.125;
+%
+% Y_out = ATC_lower_fcn(1,Y_in)
 
-% load('motor_data.mat')
-% for i = 1:499
-% if ~isnan(motor_data(i).SPECS.Maximum_RPM)
-% fprintf("%1i\n",i)
-% end
-% end
-clear
-clc
-close all
-
-%% Compare model to kde data
-u.T_begin = 20;    % starting temperature (landing temperature)
-u.T_end = 80;       % ending temperature (take off temperature)
-u.T_amb = 20;       % ambient temperature
-u.T_margin = 120;   % winding threshold temperature
-% u.N = Z_in.N;       % rotational speed, passed down from top level
-% u.N=2000;
-wr = 13e3*2*pi/60;
-u.poles = 12;
-u.slots = 12;
-u.fe = wr * u.poles/(4*pi);
-u.vel_air = 22;
-u.I = 24;
-u.V = 26.1;
-
-u.SLF = 31.7/128;          % stack length factor
-u.DF = 35.5/187.3;           % diameter factor
-y0 = ones(13,1)*u.T_margin;
-
-[~,~,Y_out,~]  = thermal_model_Joby_0427_mod(u,y0)
-
-%% Run Simulation
-
-%Y_in.I_rotor = 100;
-Y_in.K_tau = 0.005;
-Y_in.R_phase = 0.13;
-Y_in.active_mass = 0.125;
-
-Y_out = ATC_lower_fcn(1,Y_in)
-
-function [Y_out] = ATC_lower_fcn(Z_in,Y_in)
 % u is structure of inputs
 u.T_begin = 20;    % starting temperature (landing temperature)
 u.T_end = 80;       % ending temperature (take off temperature)
@@ -65,22 +29,6 @@ input_cell = cell(1,2);
 input_cell{1} = Y_in;
 input_cell{2} = u;
 
-% Set Torque Constant Fitting Coefficients
-% f = motorDataFit()
-% u.a = f.a;
-% u.b = f.b;
-% u.c = f.c;
-% u.d = f.d;
-% u.e = f.e;
-% u.f = f.f;
-% u.g = f.g;
-% 
-% tspan = [0,100];
-% y0 = ones(13,1)*u.T_begin;
-% 
-% [t,y] = ode23tb(@(t,y) motorThermal(t,y,u), tspan, y0);
-% figure
-% plot(t,y)
 x0 = [0.1,0.1,12];
 LB = [0,0,0];
 options = optimset('disp','iter','TolFun',1e-3);
@@ -114,7 +62,6 @@ y0 = ones(13,1)*u.T_margin;
 % Run model to determine estimates
 [~,~,Y_out,~]  = thermal_model_Joby_0427_mod(u,y0);
 % Generate c_2 and do preliminary scaling
-% Removed (Y_in.I_rotor - Y_out.I_rotor)/Y_in.I_rotor;
 c_2 = [(Y_in.K_tau - Y_out.K_tau)/Y_in.K_tau; ...
     (Y_in.R_phase - Y_out.R_phase)/Y_in.R_phase;...
     (Y_in.active_mass - Y_out.active_mass)/Y_in.active_mass];
@@ -189,5 +136,4 @@ dydt(12) = dTdt(12);
 dydt(13) = dTdt(13);
 assignin('base','Y_out',Y_out)
 assignin('base','G',G)
-% assignin('base','vel_air',vel_air)
 end

@@ -111,11 +111,11 @@ classdef Optimization_ATC < handle
                     obj.updateParamVals(X);
                     ft = -obj.QR.flightTime();
                     
-%                     Y_bar_q = X(find(obj.OptiVars, ["Kt", "Rm", "Mm"]));
-%                     c_q = Y_bar_q - Y_bar_m;
-%                     phi_q = v_q*c_q + (w_q*c_q)^2;
-%                     
-%                     f = ft + phi_q;
+                    Y_bar_q = X(find(obj.OptiVars, ["Kt", "Rm", "Mm"]));
+                    c_q = Y_bar_q - Y_bar_m;
+                    phi_q = v_q*c_q + (w_q*c_q)^2;
+                     
+                    f = ft + phi_q;
                     f = ft;
                 catch
                     f = NaN;
