@@ -68,14 +68,64 @@ classdef Optimization_ATC < handle
 
             obj.OptiVars = OV';
         end
+        
+        function Optimize_ATC(obj)
+            % Options
+            beta = 1.3; epsilon = 1e-4; max_iter = 100;
+            
+            % Intialize Penalty Weights:
+            % v = [v_q v_m]
+            % w = [w_q w_m]
+            
+            v = zeros(3,2);
+            w = ones(3,2);
+            
+            % Initialize Y_bar_m
+            Y_bar_m = struct();
+            Y_bar_m.K_tau = 0.005;
+            Y_bar_m.R_phase = 0.13;
+            Y_bar_m.active_mass = 0.125;
+           
+            c_old = [inf inf];
+            for i = 1:max_iter
+                % Run inner ATC
+                v_q = v(:,1);
+                w_q = w(:,1);
+                [Y_bar_q, C_q, Z] = ATC_upper_function(obj, Y_bar_m, v_q, w_q);
+                
+                v_m = v(:,2);
+                w_m = w(:,2);
+                [Y_bar_m, C_m] = ATC_lower_function(Z, Y_bar_q, v_m, w_m);
+                
+                % Create Consistency Constraint Matrix c
+                c_q = [C_q.K_tau; C_q.R_phase; C_q.active_mass];
+                c_m = [C_m.K_tau; C_m.R_phase; C_m.active_mass];
+                c = [c_q c_m];
+                
+                % Evaluate termination criteria
+                if norm(c-c_old) <= epsilon
+                    if norm(c) <= epsilon
+                        break;
+                    end
+                end
+                c_old = c;
+                
+                %Update Penalty Weights
+                v = v + 2*w.*w.*c;
+                w = w*beta;
+            end
+        end
 
-        function [X_opt_s, opt_flight_time, exitflag, lambda] = Optimize(obj,opts)
+        function [Y_bar_q, C_q, Z] = ATC_upper_function(obj, Y_bar_m, v_q, w_q, opts)
             arguments
                 obj
+                Y_bar_m % Coupling Variables - Motor Copy
+                v_q % Linear coupling variable weights 
+                w_q % Quadratic coupling variable weights
                 opts.FlightTimeOpts cell = {}
                 opts.OptimizationOpts cell = {}
                 opts.OptimizationOutput logical = true
-                opts.InitializeFromValue logical = false
+                opts.InitializeFromValue logical = true
             end
             
             optimopts = optimoptions('fmincon', 'Algorithm', 'sqp');
@@ -85,38 +135,52 @@ classdef Optimization_ATC < handle
             optimopts = optimoptions(optimopts, opts.OptimizationOpts{:});
             
             if opts.InitializeFromValue
-                x0 = .75*scale(obj.OptiVars) + .25*X0(obj.OptiVars);
+                x0 = scale(obj.OptiVars);
             else
                 x0 = X0(obj.OptiVars);
             end
+            
             lb = LB(obj.OptiVars);
             ub = UB(obj.OptiVars);
+            
+            % Turn Y_bar_m into vector
+            y_bar_m(1,1) = Y_bar_m.K_tau;
+            y_bar_m(2,1) = Y_bar_m.R_phase;
+            y_bar_m(3,1) = Y_bar_m.active_mass;
 
             [X_opt_s, fval, exitflag, ~, lambda] = fmincon(@objfun ,x0, [], [], [], [], lb, ub, @nlcon, optimopts);
-            opt_flight_time = -fval;
+            
+            % Get additional ouptuts at optimal point and convert back to struct
+            [~, y_bar_q, c_q] = objfun(X_opt_s);
+            Y_bar_q = struct();
+            Y_bar_q.K_tau = y_bar_q(1);
+            Y_bar_q.R_phase = y_bar_q(2);
+            Y_bar_q.active_mass = y_bar_q(3);
+            
+            C_q = struct();
+            C_q.K_tau = c_q(1);
+            C_q.R_phase = c_q(2);
+            C_q.active_mass = c_q(3);
+            
+            Z = [];
             
             % Set Current Values to Optimal Value in OptiVars
             setVals(obj.OptiVars, X_opt_s);
             
             % Ensure the QuadRotor gets updated to the correct sym param vals
-            obj.updateParamVals(XAll(obj.OptiVars));
+            obj.updateParamVals(XAll(obj.OptiVars));    
             
-            % Update QuadRotor's Flight Time to the optimal value
-            obj.QR.flight_time = opt_flight_time;     
-            
-            function f = objfun(X_s)
-                %objfun(X_s, Y_bar_m, v_q, w_q)
+            function [f, y_bar_q, c_q] = objfun(X_s)
                 X = XAll(obj.OptiVars,X_s); % Unscale and return all
                 try
                     obj.updateParamVals(X);
                     ft = -obj.QR.flightTime();
                     
-                    Y_bar_q = X(find(obj.OptiVars, ["Kt", "Rm", "Mm"]));
-                    c_q = Y_bar_q - Y_bar_m;
-                    phi_q = v_q*c_q + (w_q*c_q)^2;
+                    y_bar_q = X(find(obj.OptiVars, ["Kt", "Rm", "Mm"]));
+                    c_q = y_bar_q - y_bar_m;
+                    phi_q = dot(v_q,c_q) + norm(w_q.*c_q)^2;
                      
-                    f = ft + phi_q;
-                    f = ft;
+                    f = ft/5000 + phi_q;
                 catch
                     f = NaN;
                 end
