@@ -162,13 +162,27 @@ classdef Optimization_ATC < handle
             C_q.R_phase = c_q(2);
             C_q.active_mass = c_q(3);
             
-            Z = [];
-            
             % Set Current Values to Optimal Value in OptiVars
             setVals(obj.OptiVars, X_opt_s);
             
             % Ensure the QuadRotor gets updated to the correct sym param vals
             obj.updateParamVals(XAll(obj.OptiVars));    
+            
+             % Get Additional quantities for motor model
+             ss = obj.QR.SS_QAve;
+             z_i_q = ss.MotorCurrent;
+             z_i_rms = z_i_q/sqrt(3);
+             
+             z_v_q = ss.InverterVoltage_q;
+             z_v_rms = z_v_q/sqrt(3);
+             
+             z_omega = ss.RotorSpeed;
+             
+             Z = struct();
+             Z.i_rms = z_i_rms;
+             Z.v_rms = z_v_rms;
+             Z.omega = z_omega;
+             
             
             function [f, y_bar_q, c_q] = objfun(X_s)
                 X = XAll(obj.OptiVars,X_s); % Unscale and return all
