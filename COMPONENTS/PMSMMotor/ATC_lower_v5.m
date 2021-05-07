@@ -1,17 +1,40 @@
-function [Y_bar_m, C_m] = ATC_lower_function(Z,Y_bar_q,v_m,w_m)
 % Reid Smith, Spring 2021
 % Code seeks to take in inputs Z and use design variables to optimize
 % performance of coupling variables
-% Verified with: KDE2814XF-515
 
+clear
+clc
+close all
+
+
+%% Run Simulation
+
+% KDE2814XF-515
+Y_bar_q.K_tau = 0.0185;
+Y_bar_q.R_phase = 0.013;
+Y_bar_q.active_mass = 0.125;
+
+% Initialize Z_in
+Z.I_rms = 24;
+Z.V = 26.1;
+Z.wr = 13e3*2*pi/60;
+v_m = [1;1;1];
+w_m = [0;0;0];
+
+[Y_out] = ATC_lower_fcn(Z,Y_bar_q,v_m,w_m)
+
+
+%% Lower ATC Fcn
+
+function [Y_bar_m] = ATC_lower_fcn(Z,Y_bar_q,v_m,w_m)
 % u is structure of inputs
 u.T_begin = 20;    % starting temperature (landing temperature)
 u.T_amb = 20;       % ambient temperature
 u.T_margin = u.T_begin + 115;   % winding threshold temperature
 u.vel_air = 22;         % cooling air velocity
-u.I = Z.i_rms;
-u.V = Z.v_rms;
-u.wr = Z.omega;
+u.I = Z.I_rms;
+u.V = Z.V;
+u.wr = Z.wr;
 
 input_cell = cell(1,4);
 input_cell{1} = Y_bar_q;
@@ -36,13 +59,6 @@ y0 = ones(13,1)*u.T_begin;
 max_ss = max(y(:,end));
 y0 = ones(13,1)*max_ss;
 [~,~,Y_bar_m,G]  = thermal_model_Joby_0427_mod(u,y0);
-
-C_m = struct();
-% Final C_m values required for weight update calculations
-C_m.K_tau = Y_bar_m.K_tau - Y_bar_q.K_tau;
-C_m.R_phase = Y_bar_m.R_phase - Y_bar_q.R_phase;
-C_m.active_mass = Y_bar_m.active_mass - Y_bar_q.active_mass;
-
 
 % Display Results
 fprintf("\nDiameter: %3e\nLength: %3e\nPoles: %3e\n",G.Ro,G.L,u.poles)
@@ -69,17 +85,11 @@ y0 = ones(13,1)*max_ss;
 
 % Run model to determine estimates
 [~,~,Y_out,~]  = thermal_model_Joby_0427_mod(u,y0);
-
 % Generate c_2 and do preliminary scaling
 c_m = [(Y_in.K_tau - Y_out.K_tau)/Y_in.K_tau; ...
     (Y_in.R_phase - Y_out.R_phase)/Y_in.R_phase;...
     (Y_in.active_mass - Y_out.active_mass)/Y_in.active_mass];
-
-% c_m = [(Y_in.K_tau - Y_out.K_tau); ...
-%     (Y_in.R_phase - Y_out.R_phase);...
-%     (Y_in.active_mass - Y_out.active_mass)];
-
-% f_obj = dot(v_m,c_m) + norm(w_m.*c_m).^2;
+% f_obj = norm(v_m.*c_m + (w_m.*c_m).^2);
 f_obj = norm(c_m);
 end
 

@@ -82,9 +82,10 @@ classdef Optimization_ATC < handle
             
             % Initialize Y_bar_m
             Y_bar_m = struct();
-            Y_bar_m.K_tau = 0.005;
+            Y_bar_m.K_tau = 0.0185;
             Y_bar_m.R_phase = 0.13;
             Y_bar_m.active_mass = 0.125;
+
            
             c_old = [inf inf];
             for i = 1:max_iter

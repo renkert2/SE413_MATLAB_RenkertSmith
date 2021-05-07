@@ -4,3 +4,6 @@ addpath(genpath('STUDIES'));
 addpath(genpath('TESTS'));
 addpath(genpath('SUPPORT_FUNCTIONS'));
 addpath(genpath('OPTIM'));
+addpath(genpath('GraphTools/GRAPH_CLASS'));
+addpath(genpath('GraphTools/SUPPORT_FILES'));
+addpath(genpath('GraphTools/SUPPORT_FUNCTIONS'));

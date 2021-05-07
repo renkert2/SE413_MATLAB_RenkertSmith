@@ -1,25 +1,17 @@
 function [dTdt,nu_motor,Y_out,G]  = thermal_model_Joby_0427_mod(u,T)
 % Determine current density and rpm scaling values
 
+G.d_wire = 0.254/1000;           % AWG 30
+
 % Outlet Temperature for heat sink calculations
 Tout = u.T_amb; % 3 matches transient data
+% u.poles = ceil(u.poles);
 u.slots = u.poles;
 
-% Pole number
-% slots = 48;
-% poles = 40;
-% N_turn = 2*slots/3; % number of turns per phase
-% N_turn = 2;             % from figure 26 of Dubois paper
-N_sc = 40;              % number of strands per slot
-% B_g_pk = 1.4;           % average peak magnetic flux density
-% 0.96 / 1000 is the wire diameter estimation of Fig 26 of Design paper
-% d_sc = 0.91186 /1000;   % close AWG value to measured diameter
-% n_p = 15; % number of parallel paths per phase
-
 % Frequencies
-we = u.fe*2*pi; % electrical angular frequency [rad/s]
-wr = 2*we/u.poles; % mechanical angular frequency [rad/s]
-% rpm = wr * 60 / 2/ pi;
+wr = u.wr; % mechanical angular frequency [rad/s]
+u.fe = wr * u.poles/(4*pi);
+% we = u.fe*2*pi; % electrical angular frequency [rad/s]
 
 %% Model Geometry and Thermal Properties
 % Uses metric units
@@ -56,7 +48,6 @@ G.Ww = pi * (G.Rw + G.Rsy) /u.slots - G.Dw;    % Width of slot
 
 p = u.poles/2;                     % number of pole pairs
 n_fins = 2*pi*G.Rht/(G.Wht+G.Tw);       % number of cooling fins
-% n_fins = 240;
 
 % Calculate copper resistivity
 T_ref = 20;                     % reference temperature [deg C]
@@ -76,12 +67,11 @@ mass_wind = (u.slots * G.Dw*G.Ww) * G.L * rho_wind;
 mass_mag = pi*(G.Rm^2 - G.Rr^2) * G.L * rho_mag;
 mass_rot_out = pi*(G.Ro^2 - G.Rm^2) * G.L * rho_al;
 Y_out.active_mass = mass_hs + mass_iron + mass_wind + mass_mag;
-% active_mass = 22.2;                       % active motor mass from paper
+
 % Mass moment of inertia, change units to kg mm^2
-I_mag = mass_mag/2*(G.Rm^2 + G.Rr^2)*1e6;
-I_rot_out = mass_rot_out/2*(G.Ro^2 + G.Rm^2)*1e6;
-Y_out.I_rotor = I_mag + I_rot_out;
-% mass_iron = 8.85;      % estimate iron motor weight from model recreation
+% I_mag = mass_mag/2*(G.Rm^2 + G.Rr^2)*1e6;
+% I_rot_out = mass_rot_out/2*(G.Ro^2 + G.Rm^2)*1e6;
+% Y_out.I_rotor = I_mag + I_rot_out;
 
 %% Electromagnetics
 % % theta = 0;                  % angle of magnetic field analysis
@@ -90,7 +80,6 @@ mu_r = 1.04;                % magnet permeability
 B_sat_sy = 2.0;             % iron yoke saturation flux
 stack_fac = 0.97;           % stacking factor (out of 1)
 J_s = 7.25;                 % slot current density
-% p = poles/2;
 
 % D_0 is an intermediate variable used to calculate radial flux density
 D_0 = 2*(1-mu_r) * ((1-mu_r)*(G.Rr/G.Rm)^(2*p) + (1 + mu_r)*(G.Rsy/G.Rm)^(2*p))...
@@ -105,9 +94,6 @@ B_t_fcn = @(r,theta) -4*B_rem/D_0 * p/(1-p) * (1+mu_r) * (1 - (G.Rr/G.Rm)^(p-1))
 % B_G.Rsy is for r = stator yoke outer radius and theta = 0
 B_G.Rsy = B_r_fcn((G.Rr+G.Rm)/2,0)*2;
 B_G.Rw = B_r_fcn(G.Rw,0)*2;
-% check1 = 1 - (G.Rr/G.Rm)^(p-1)
-% check2 = (1 + (G.Rsy/G.Rw)^(2*p)) * (G.Rw/G.Rr)^(p-1)
-% check3 = G.Rr/G.Rm
 
 
 %% Fluid Properties *
@@ -196,8 +182,6 @@ cp_air = interp1(cp_table(:,1),cp_table(:,2),Tout);
 Pr_air = nu_air * cp_air / k_air;
 
 %% Iron Losses
-% Calulate for motor model
-% B_yk = 1.75;         % approximate average of yoke flux density
 
 % Curve fitting coefficients for JNEX900
 k_h = 0.02831;
@@ -210,13 +194,18 @@ beta = 0.7441;
 P_iron_specific = k_h*u.fe*B_G.Rsy^(alpha+beta*B_G.Rsy) + 2*pi^2*k_e*u.fe^2*B_G.Rsy^2;
 P_core = P_iron_specific * mass_iron;       % specific iron losses are W/kg, so convert mass
 
+%% DC Winding Losses
+% Estimate number of turns, parallel paths, and strands per slot
+G.n_turns = floor(G.Ww/2/G.d_wire)-1;
+G.n_pp = floor(G.Dw/2/G.d_wire);
+N_sc = G.n_turns * G.n_pp;
+
+% Estimate phase resistance and I^2R losses
+Y_out.R_phase = (G.n_turns*G.L*rho_cu)/(G.n_pp*pi/4*G.d_wire^2);
+P_w_res = 3 * Y_out.R_phase * u.I^2 / sqrt(2);
 
 %% AC Loss predictions
 %% Wire Eddy Current Losses
-% B_g_pk = 1.1;
-% d_wire = 1.01/1000;
-% d_wire = 0.127/1000;
-G.d_wire = 0.25/1000;
 P_se_vol = pi * u.fe^2 * B_G.Rw^2 * G.d_wire^4 * G.L / (128 * rho_cu);
 P_w_eddy = P_se_vol * u.slots * N_sc;     % losses per strand to total losses
 
@@ -227,19 +216,6 @@ rho_mag = rho_mag_ref * (1 + alpha_mag*(max(T) - T_ref));
 P_mag_dens = ((G.Rm-G.Rr)^2 * u.fe^2 * B_G.Rw^2) / (24* rho_mag);
 P_mag = (pi*(G.Rm^2 - G.Rr^2)*G.L)*P_mag_dens;
 
-%% DC Winding Losses
-% n_turns = 5;        % number of turns per phase
-G.n_turns = floor(G.Ww/2/G.d_wire)-1;
-% if G.n_turns <= 0
-%     error("Winding Width too Small")
-% end
-G.n_pp = floor(G.Dw/2/G.d_wire);
-% if G.n_pp <= 0
-%     error("Winding Height too Small")
-% end
-% n_pp = 1;           % number of parallel paths
-Y_out.R_phase = (G.n_turns*G.L*rho_cu)/(G.n_pp*pi/4*G.d_wire^2);
-P_w_res = 3 * Y_out.R_phase * u.I^2 / sqrt(2);
 
 %% Mechanical Losses
 mu_f = 0.024;       % Bearing friction factor
@@ -270,8 +246,6 @@ a_gap = 2*G.Rw;                    % inner annulus diameter
 b_gap = 2*(G.Rw + G.g);                % outer annulus diameter
 Dh_gap = 2 * G.g;
 
-% T_wall = 100;
-% mu_wall = interp1(mu_table(:,1),mu_table(:,2),T_wall);
 air_gap_percent = 50/100;                   % percent of air velocity in air gap, ...
 % 50% taken from Figure 22 of Joby Motor Design paper
 v_ag_axial = u.vel_air * air_gap_percent;     % axial velocity of flow
@@ -448,29 +422,7 @@ dTdt = inv(C)*(Qh-Gh*T);
 
 
 %% Estimate torque constant
-% load('motor_data.mat')
-% data_mat = zeros(1,6);
-% for i = 1:499
-% if ~isnan(motor_data(i).SPECS.Weight) && ~isnan(motor_data(i).CONSTANTS.Rm) ...
-%         && ~isnan(motor_data(i).CONSTANTS.kV) && ~isnan(motor_data(i).SPECS.Maximum_Amps)...
-%         && ~isnan(motor_data(i).SPECS.Length)
-%     if motor_data(i).SPECS.Weight < 0.3 && motor_data(i).CONSTANTS.Rm < 2
-%         data_mat = [data_mat;motor_data(i).SPECS.Weight,...
-%             motor_data(i).CONSTANTS.Rm,motor_data(i).CONSTANTS.kV,...
-%             motor_data(i).SPECS.Maximum_Amps,...
-%             motor_data(i).SPECS.Length,motor_data(i).SPECS.Diameter];
-%     end
-% end
-% end
-% data_mat = data_mat(2:end,:);
-% surf_eqn = @(a,b,c,d,e,f,g,x,y) (a./(x+f)).^d + (b./(y+g)).^e + c;
-% g4 = fittype( surf_eqn, 'independent', {'x', 'y'},...
-%      'dependent', 'z' );
-%   go = fitoptions('exp2','lower',[0,0,-1e5,0,0,0,0],...
-%      'upper',[1e4, 1e4, 1e5, 1e4,1e4,1e4,1e4],...
-%      'StartPoint',[1,1,0,1,1,0,0]);
-
-% [f4,gof4] = fit([data_mat(:,1),data_mat(:,2)],data_mat(:,3),g4,go);
+% Use curve fit constants to estimate torque constant
 a = 29.47;
 b = 27.96;
 c = -645.9;
@@ -479,6 +431,6 @@ e = 1.416;
 f = 0.03415;
 g = 0.09588;
 f4 = @(x,y) (a./(x+f)).^d + (b./(y+g)).^e + c;
-K_v = f4(Y_out.active_mass,Y_out.R_phase);
+K_v = f4(Y_out.active_mass,Y_out.R_phase)*2;
 Y_out.K_tau = 60/(2*pi*K_v);
 end
