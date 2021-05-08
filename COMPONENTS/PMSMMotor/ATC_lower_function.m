@@ -1,4 +1,4 @@
-function [Y_bar_m, C_m] = ATC_lower_function(Z,Y_bar_q,v_m,w_m)
+function [Y_bar_m, C_m, xval] = ATC_lower_function(Z,Y_bar_q,v_m,w_m, x0)
 % Reid Smith, Spring 2021
 % Code seeks to take in inputs Z and use design variables to optimize
 % performance of coupling variables
@@ -19,8 +19,6 @@ input_cell{2} = u;
 input_cell{3} = v_m;
 input_cell{4} = w_m;
 
-
-x0 = [0.1,0.1,12];
 LB = [0,0,0];
 options = optimset('disp','iter','TolFun',1e-3,'TolX',1e-9,'Algorithm','Interior-Point');
 [xval,fval] = fmincon(@(x)obj_low_ATC(x,input_cell),x0,[],[],[],[],LB,[],@(x)constr_low_ATC(x,input_cell),...
@@ -71,16 +69,16 @@ y0 = ones(13,1)*max_ss;
 [~,~,Y_out,~]  = thermal_model_Joby_0427_mod(u,y0);
 
 % Generate c_2 and do preliminary scaling
-c_m = [(Y_in.K_tau - Y_out.K_tau)/Y_in.K_tau; ...
+c_m = abs([(Y_in.K_tau - Y_out.K_tau)/Y_in.K_tau; ...
     (Y_in.R_phase - Y_out.R_phase)/Y_in.R_phase;...
-    (Y_in.active_mass - Y_out.active_mass)/Y_in.active_mass];
-
+    (Y_in.active_mass - Y_out.active_mass)/Y_in.active_mass]);
+% 
 % c_m = [(Y_in.K_tau - Y_out.K_tau); ...
 %     (Y_in.R_phase - Y_out.R_phase);...
 %     (Y_in.active_mass - Y_out.active_mass)];
 
-% f_obj = dot(v_m,c_m) + norm(w_m.*c_m).^2;
-f_obj = norm(c_m);
+f_obj = dot(v_m,c_m) + norm(w_m.*c_m).^2;
+% f_obj = norm(c_m);
 end
 
 % Constraint function

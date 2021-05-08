@@ -83,6 +83,8 @@ y0 = ones(13,1)*u.T_begin;
 max_ss = max(y(:,end));
 y0 = ones(13,1)*max_ss;
 
+%y0 = ones(13,1)*u.T_margin;
+
 % Run model to determine estimates
 [~,~,Y_out,~]  = thermal_model_Joby_0427_mod(u,y0);
 % Generate c_2 and do preliminary scaling

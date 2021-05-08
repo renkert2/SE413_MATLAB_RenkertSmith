@@ -47,7 +47,7 @@ classdef Optimization_ATC < handle
             OV(2).Unit = "m";
             OV(2).Parent = prop;
             
-            OV(3) = optiVar("N_p", 1, 0.1, 10);
+            OV(3) = optiVar("N_p", 0.1, 0.1, 10);
             OV(3).Description = "Parallel Cells";
             OV(3).Parent = batt;
             
@@ -56,12 +56,12 @@ classdef Optimization_ATC < handle
             OV(4).Unit = "N*m/A";
             OV(4).Parent = motor;
             
-            OV(5) = optiVar("Rm",0.01,1e-6,10); % Check These
+            OV(5) = optiVar("Rm",1,1e-6,10); % Check These
             OV(5).Description = "Phase Resistance";
             OV(5).Unit = "Ohm";
             OV(5).Parent = motor;
             
-            OV(6) = optiVar("Mm", 0.01, 1e-6, 10);
+            OV(6) = optiVar("Mm", 0.4, 1e-6, 10);
             OV(6).Description = "Motor Mass";
             OV(6).Unit = "Kg";
             OV(6).Parent = motor;
@@ -71,22 +71,27 @@ classdef Optimization_ATC < handle
         
         function Optimize_ATC(obj)
             % Options
-            beta = 1.3; epsilon = 1e-4; max_iter = 100;
+            beta = 1.3; epsilon = 1e-3; max_iter = 100;
             
             % Intialize Penalty Weights:
             % v = [v_q v_m]
             % w = [w_q w_m]
-            
             v = zeros(3,2);
             w = ones(3,2);
+            
+            % Initialize QuadRotor
+            obj.OptiVars.reset();
+            obj.resetParamVals
             
             % Initialize Y_bar_m
             Y_bar_m = struct();
             Y_bar_m.K_tau = 0.0185;
             Y_bar_m.R_phase = 0.13;
             Y_bar_m.active_mass = 0.125;
-
-           
+            %Y_bar_0 = Y_bar_m;
+            
+            % Initialize x0_m
+            x0_m = [0.1,0.1,12];
             c_old = [inf inf];
             for i = 1:max_iter
                 % Run inner ATC
@@ -96,7 +101,7 @@ classdef Optimization_ATC < handle
                 
                 v_m = v(:,2);
                 w_m = w(:,2);
-                [Y_bar_m, C_m] = ATC_lower_function(Z, Y_bar_q, v_m, w_m);
+                [Y_bar_m, C_m, x0_m] = ATC_lower_function(Z, Y_bar_q, v_m, w_m, x0_m);
                 
                 % Create Consistency Constraint Matrix c
                 c_q = [C_q.K_tau; C_q.R_phase; C_q.active_mass];
@@ -106,6 +111,7 @@ classdef Optimization_ATC < handle
                 % Evaluate termination criteria
                 if norm(c-c_old) <= epsilon
                     if norm(c) <= epsilon
+                        disp('Optimization Converged')
                         break;
                     end
                 end
@@ -131,7 +137,7 @@ classdef Optimization_ATC < handle
             
             optimopts = optimoptions('fmincon', 'Algorithm', 'sqp');
             if opts.OptimizationOutput
-                optimopts = optimoptions(optimopts, 'Display', 'iter-detailed', 'PlotFcn', {@optimplotx,@optimplotfval,@optimplotfirstorderopt});
+                optimopts = optimoptions(optimopts, 'Display', 'iter');
             end
             optimopts = optimoptions(optimopts, opts.OptimizationOpts{:});
             
@@ -184,6 +190,11 @@ classdef Optimization_ATC < handle
              Z.v_rms = z_v_rms;
              Z.omega = z_omega;
              
+             % Display
+             disp(obj.OptiVars);
+             fprintf("Flight Time: %.2f \n", obj.QR.flightTime());
+             fprintf("c_q: %.2f, %.2f, %.2f \n", c_q(1), c_q(2), c_q(3));
+             
             
             function [f, y_bar_q, c_q] = objfun(X_s)
                 X = XAll(obj.OptiVars,X_s); % Unscale and return all
@@ -192,7 +203,7 @@ classdef Optimization_ATC < handle
                     ft = -obj.QR.flightTime();
                     
                     y_bar_q = X(find(obj.OptiVars, ["Kt", "Rm", "Mm"]));
-                    c_q = y_bar_q - y_bar_m;
+                    c_q = abs(y_bar_q - y_bar_m)./y_bar_m; % Lets try scaling
                     phi_q = dot(v_q,c_q) + norm(w_q.*c_q)^2;
                      
                     f = ft/5000 + phi_q;

@@ -36,7 +36,7 @@ G.Rm = 0.173*u.DF;               % magnet outer radius
 G.Rw = 0.165*u.DF;      % Winding outer radius
 % Simulink does not allow adding fields after the structure has been read,
 % so define all values ahead of time
-G.Rsy = 0; G.Rins = 0; G.Rh = 0; G.Rht = 0; G.Rsi = 0; G.Rr = 0;G.Ww = 0;G.d_wire=0;
+G.Rsy = 0; G.Rins = 0; G.Rh = 0; G.Rht = 0; G.Rsi = 0; G.Rr = 0;G.Ww = 0;
 G.Rsy = G.Rw-G.Dw;     % Stator yoke outer radius
 G.Rins = G.Rsy-G.Dsy;  % Insulator layer outer radius %%%%%%%%%%%%%%%%%%%%%
 G.Rh = G.Rins-G.Dins;     % Thermal fin outer radius %%%%%%%%%%%%%%%%%%%%%
